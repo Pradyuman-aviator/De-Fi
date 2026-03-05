@@ -217,7 +217,7 @@ contract RLStrategy is StrategyBase {
     function _chooseAction(uint256 state) internal returns (uint256) {
         // Epsilon-greedy: explore with probability epsilon
         nonce++;
-        uint256 rand = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, nonce))) % 1000;
+        uint256 rand = uint256(block.prevrandao ^ nonce ^ block.timestamp) % 1000;
 
         if (rand < epsilon) {
             // Explore: random action

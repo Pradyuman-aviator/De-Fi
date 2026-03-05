@@ -108,7 +108,7 @@ abstract contract StrategyBase {
      * @param _currentPrice The new price
      * @param _updateId The update sequence number
      */
-    function react(uint256 _currentPrice, uint256 _updateId) external {
+    function react(uint256 _currentPrice, uint256 _updateId) external onlyAuthorized {
         require(isActive, "Strategy not active");
 
         // Check stop loss first

@@ -85,9 +85,6 @@ contract Leaderboard {
 
         if (count == 0) return;
 
-        // Store old rankings for comparison
-        mapping(address => uint256) storage oldRanks;
-
         // Rebuild rankings array
         delete rankings;
 
@@ -141,6 +138,9 @@ contract Leaderboard {
         }
     }
 
+    // History tracking uses circular buffer
+    uint256 public historyIndex;
+
     function _saveSnapshot() internal {
         address[] memory addrs = new address[](rankings.length);
         int256[] memory pnls = new int256[](rankings.length);
@@ -150,23 +150,18 @@ contract Leaderboard {
             pnls[i] = rankings[i].totalPnL;
         }
 
-        if (rankHistory.length >= MAX_HISTORY) {
-            // Shift and replace oldest
-            for (uint256 i = 0; i < rankHistory.length - 1; i++) {
-                rankHistory[i] = rankHistory[i + 1];
-            }
-            rankHistory[rankHistory.length - 1] = RankSnapshot({
-                timestamp: block.timestamp,
-                rankedAddresses: addrs,
-                rankedPnLs: pnls
-            });
+        RankSnapshot memory snap = RankSnapshot({
+            timestamp: block.timestamp,
+            rankedAddresses: addrs,
+            rankedPnLs: pnls
+        });
+
+        if (rankHistory.length < MAX_HISTORY) {
+            rankHistory.push(snap);
         } else {
-            rankHistory.push(RankSnapshot({
-                timestamp: block.timestamp,
-                rankedAddresses: addrs,
-                rankedPnLs: pnls
-            }));
+            rankHistory[historyIndex] = snap;
         }
+        historyIndex = (historyIndex + 1) % MAX_HISTORY;
     }
 
     // --- View Functions ---

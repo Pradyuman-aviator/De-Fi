@@ -48,7 +48,7 @@ Frontend updates with animations
 
 ## 🏗️ Architecture
 
-### Smart Contracts (7 contracts)
+### Smart Contracts (11 contracts)
 - `PriceOracle.sol` — Trigger engine with 100-price circular buffer
 - `StrategyBase.sol` — Abstract agent with position management
 - `MomentumStrategy.sol` — Trend-following agent
@@ -59,6 +59,7 @@ Frontend updates with animations
 - `PortfolioManager.sol` — Aggregate P&L tracking
 - `Leaderboard.sol` — Real-time rankings
 - `ArenaCore.sol` — Orchestrator with demo reset
+- `ReactiveStrategyHandler.sol` — Somnia Reactivity handler (SomniaEventHandler)
 
 ### Frontend (Next.js 14)
 - Real-time dashboard with live price display
@@ -123,8 +124,23 @@ Open [http://localhost:3000](http://localhost:3000) and start clicking scenarios
 cd contracts
 cp .env.example .env
 # Edit .env with your Somnia testnet private key
-npx hardhat run scripts/deploy.js --network somnia
+npx hardhat run scripts/deploy-somnia.js --network somnia
 ```
+
+### Deployed Contracts (Somnia Testnet)
+
+| Contract | Address |
+|----------|--------|
+| PriceOracle | [`0xE886...95b4`](https://shannon-explorer.somnia.network/address/0xE88643c9310291275B93BA56EF155A077b8895b4) |
+| PortfolioManager | [`0x5Ec4...97dd`](https://shannon-explorer.somnia.network/address/0x5Ec4af50Abd3b13Def7FeCf7d3FC39574D2497dd) |
+| Leaderboard | [`0xa840...d60e`](https://shannon-explorer.somnia.network/address/0xa84009185873Bd54ee309fDF7BAE980A78f7d60e) |
+| ArenaCore | [`0x03da...7197`](https://shannon-explorer.somnia.network/address/0x03da74bE7a4FE1D14d618a9eb5AfBD9456787197) |
+| ReactiveStrategyHandler | [`0x2f1d...e054`](https://shannon-explorer.somnia.network/address/0x2f1d986368351640411394Eb254602CE940de054) |
+| MomentumStrategy | [`0x8929...c21C`](https://shannon-explorer.somnia.network/address/0x892916A042af56710ccA23630c6B0c372d6fc21C) |
+| MeanReversionStrategy | [`0xA7F2...e7C1`](https://shannon-explorer.somnia.network/address/0xA7F2C9C00a6864e545044f9E3863bd66c05Ee7C1) |
+| ArbitrageStrategy | [`0x5fd5...ADc2`](https://shannon-explorer.somnia.network/address/0x5fd5e9BDCaf6b5A9dc1Edfe37EE246DC08F6ADc2) |
+| RiskParityStrategy | [`0x1449...7Cc6`](https://shannon-explorer.somnia.network/address/0x1449B54A5c67831aF7D4Dcf03Ed26Bae00947Cc6) |
+| RLStrategy | [`0xb970...86e8`](https://shannon-explorer.somnia.network/address/0xb9706Cd0164D700f6B2e5d44f2dC28CE98B886e8) |
 
 ---
 

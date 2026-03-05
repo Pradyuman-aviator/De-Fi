@@ -6,6 +6,7 @@ module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
+      viaIR: true,
       optimizer: {
         enabled: true,
         runs: 200,
@@ -17,7 +18,7 @@ module.exports = {
       chainId: 31337,
     },
     somnia: {
-      url: process.env.SOMNIA_RPC_URL || "https://dream-rpc.somnia.network",
+      url: process.env.SOMNIA_RPC_URL || "https://api.infra.testnet.somnia.network",
       chainId: 50312,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
