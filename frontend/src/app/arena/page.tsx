@@ -6,10 +6,32 @@ import LeaderboardTable from '@/components/LeaderboardTable';
 import SimulationPanel from '@/components/SimulationPanel';
 import ArenaHeader from '@/components/ArenaHeader';
 import { useArenaStore } from '@/store/useArenaStore';
+import { useWalletStore } from '@/store/useWalletStore';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import AddAgentModal from '@/components/AddAgentModal';
 
 export default function ArenaPage() {
-    const agents = useArenaStore(s => s.agents);
+    const mockAgents = useArenaStore(s => s.agents);
+    const { isOnChainMode, onChainAgents } = useWalletStore();
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    // Transform on-chain data to match AgentState format for the UI
+    const agents = isOnChainMode ? onChainAgents.map(oca => {
+        const mockMatch = mockAgents.find(a => a.id === oca.agentId) || mockAgents[0];
+        return {
+            ...mockMatch,
+            position: oca.position === 1 ? 'LONG' : (oca.position === 2 ? 'SHORT' : 'NEUTRAL') as any,
+            entryPrice: Number(oca.entryPrice) / 1e18,
+            positionSize: Number(oca.positionSize),
+            totalPnL: Number(oca.totalPnL) / 1e18,
+            unrealizedPnL: Number(oca.unrealizedPnL) / 1e18,
+            totalTrades: Number(oca.totalTrades),
+            winRate: Number(oca.winRate),
+            isActive: oca.isActive,
+            isThinking: false,
+        };
+    }) : mockAgents;
 
     return (
         <div className="min-h-screen">
@@ -22,7 +44,7 @@ export default function ArenaPage() {
                         <span className="w-1.5 h-1.5 rounded-full bg-arena-accent animate-pulse" />
                         Active Agents
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                         {agents.map((agent, i) => (
                             <motion.div
                                 key={agent.id}
@@ -36,6 +58,21 @@ export default function ArenaPage() {
                                 />
                             </motion.div>
                         ))}
+
+                        {/* Add Custom Agent Placeholder */}
+                        <motion.button
+                            onClick={() => setIsAddModalOpen(true)}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: agents.length * 0.1 }}
+                            className="glass-card flex flex-col items-center justify-center p-6 h-[178px] rounded-xl border border-dashed border-arena-border hover:border-arena-accent/50 group transition-all"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-arena-accent/10 flex items-center justify-center mb-3 group-hover:bg-arena-accent/20 transition-colors">
+                                <span className="text-2xl text-arena-accent font-bold">+</span>
+                            </div>
+                            <h3 className="font-semibold text-arena-text-primary text-sm">Deploy Agent</h3>
+                            <p className="text-[10px] text-arena-text-muted mt-1 text-center">Open platform to external AI models</p>
+                        </motion.button>
                     </div>
                 </section>
 
@@ -97,6 +134,12 @@ export default function ArenaPage() {
                     </p>
                 </div>
             </footer>
+
+            {/* Add Agent Modal */}
+            <AddAgentModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+            />
         </div>
     );
 }

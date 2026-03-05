@@ -5,11 +5,30 @@ import SimulationPanel from '@/components/SimulationPanel';
 import PriceChart from '@/components/PriceChart';
 import AgentCard from '@/components/AgentCard';
 import { useArenaStore } from '@/store/useArenaStore';
+import { useWalletStore } from '@/store/useWalletStore';
 import { motion } from 'framer-motion';
 
 export default function SimulatePage() {
-    const agents = useArenaStore(s => s.agents);
+    const mockAgents = useArenaStore(s => s.agents);
     const activeScenario = useArenaStore(s => s.activeScenario);
+    const { isOnChainMode, onChainAgents } = useWalletStore();
+
+    // Transform on-chain data to match AgentState format for the UI
+    const agents = isOnChainMode ? onChainAgents.map(oca => {
+        const mockMatch = mockAgents.find(a => a.id === oca.agentId) || mockAgents[0];
+        return {
+            ...mockMatch,
+            position: oca.position === 1 ? 'LONG' : (oca.position === 2 ? 'SHORT' : 'NEUTRAL') as any,
+            entryPrice: Number(oca.entryPrice) / 1e18,
+            positionSize: Number(oca.positionSize),
+            totalPnL: Number(oca.totalPnL) / 1e18,
+            unrealizedPnL: Number(oca.unrealizedPnL) / 1e18,
+            totalTrades: Number(oca.totalTrades),
+            winRate: Number(oca.winRate),
+            isActive: oca.isActive,
+            isThinking: false,
+        };
+    }) : mockAgents;
 
     return (
         <div className="min-h-screen">

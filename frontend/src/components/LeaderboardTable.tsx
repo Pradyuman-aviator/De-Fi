@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useArenaStore, type LeaderboardEntry } from '@/store/useArenaStore';
+import { useWalletStore } from '@/store/useWalletStore';
 
 const medals = ['🥇', '🥈', '🥉'];
 
@@ -22,7 +23,21 @@ const agentEmojis: Record<string, string> = {
 };
 
 export default function LeaderboardTable() {
-    const leaderboard = useArenaStore(s => s.leaderboard);
+    const mockLeaderboard = useArenaStore(s => s.leaderboard);
+    const { isOnChainMode, onChainRankings } = useWalletStore();
+
+    const leaderboard = isOnChainMode ? onChainRankings.map(ocr => {
+        const mockMatch = mockLeaderboard.find(a => a.name === ocr.name) || mockLeaderboard[0];
+        return {
+            agentId: mockMatch.agentId,
+            name: ocr.name,
+            rank: Number(ocr.rank),
+            totalPnL: Number(ocr.totalPnL) / 1e18,
+            winRate: Number(ocr.winRate),
+            totalTrades: Number(ocr.totalTrades),
+            previousRank: Number(ocr.rank), // On-chain doesn't track previous rank natively
+        };
+    }).sort((a, b) => a.rank - b.rank) : mockLeaderboard;
 
     return (
         <div className="glass-card rounded-xl overflow-hidden">

@@ -12,6 +12,7 @@ import {
     ReferenceLine,
 } from 'recharts';
 import { useArenaStore } from '@/store/useArenaStore';
+import { useWalletStore } from '@/store/useWalletStore';
 
 const agentColorMap: Record<string, string> = {
     momentum: '#3b82f6',
@@ -35,24 +36,34 @@ interface PriceChartProps {
 }
 
 export default function PriceChart({ showAgents = true, height = 300 }: PriceChartProps) {
-    const priceHistory = useArenaStore(s => s.priceHistory);
-    const agents = useArenaStore(s => s.agents);
+    const mockPriceHistory = useArenaStore(s => s.priceHistory);
+    const mockAgents = useArenaStore(s => s.agents);
+    const { isOnChainMode, onChainPriceHistory } = useWalletStore();
+
+    // In on-chain mode, we only have current P&L, not historical P&L for charts.
+    // So we only plot the price history line.
+    const _showAgents = isOnChainMode ? false : showAgents;
 
     // Build chart data
-    const chartData = priceHistory.map((ph, i) => {
-        const point: Record<string, number> = {
-            update: ph.updateId,
-            price: ph.price,
-        };
+    const chartData = isOnChainMode
+        ? onChainPriceHistory.map((price, i) => ({
+            update: i + 1,
+            price: price,
+        }))
+        : mockPriceHistory.map((ph, i) => {
+            const point: Record<string, number> = {
+                update: ph.updateId,
+                price: ph.price,
+            };
 
-        if (showAgents) {
-            agents.forEach(agent => {
-                point[agent.id] = agent.pnlHistory[i] ?? 0;
-            });
-        }
+            if (_showAgents) {
+                mockAgents.forEach(agent => {
+                    point[agent.id] = agent.pnlHistory[i] ?? 0;
+                });
+            }
 
-        return point;
-    });
+            return point;
+        });
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (!active || !payload) return null;
@@ -79,7 +90,7 @@ export default function PriceChart({ showAgents = true, height = 300 }: PriceCha
                     📊 {showAgents ? 'Performance Chart' : 'Price History'}
                 </h2>
                 <span className="text-xs text-arena-text-muted font-mono">
-                    {priceHistory.length} updates
+                    {(isOnChainMode ? onChainPriceHistory : mockPriceHistory).length} updates
                 </span>
             </div>
 
@@ -105,7 +116,7 @@ export default function PriceChart({ showAgents = true, height = 300 }: PriceCha
                         tickFormatter={(val) => `$${val}`}
                         domain={['auto', 'auto']}
                     />
-                    {showAgents && (
+                    {_showAgents && (
                         <YAxis
                             yAxisId="pnl"
                             orientation="left"
@@ -116,7 +127,7 @@ export default function PriceChart({ showAgents = true, height = 300 }: PriceCha
                         />
                     )}
                     <Tooltip content={<CustomTooltip />} />
-                    {showAgents && (
+                    {_showAgents && (
                         <Legend
                             wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                             iconSize={8}
@@ -135,12 +146,12 @@ export default function PriceChart({ showAgents = true, height = 300 }: PriceCha
                     />
 
                     {/* Zero reference line for P&L */}
-                    {showAgents && (
+                    {_showAgents && (
                         <ReferenceLine yAxisId="pnl" y={0} stroke="#334155" strokeDasharray="3 3" />
                     )}
 
                     {/* Agent P&L lines */}
-                    {showAgents && agents.map(agent => (
+                    {_showAgents && mockAgents.map((agent: any) => (
                         <Line
                             key={agent.id}
                             yAxisId="pnl"

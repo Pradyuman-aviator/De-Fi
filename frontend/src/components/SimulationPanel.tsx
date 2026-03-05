@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useArenaStore, SCENARIOS } from '@/store/useArenaStore';
+import { useWalletStore } from '@/store/useWalletStore';
 import { useState } from 'react';
 
 export default function SimulationPanel() {
@@ -15,14 +16,62 @@ export default function SimulationPanel() {
         scenarioProgress,
         simulationSpeed,
         setSimulationSpeed,
-        currentPrice,
+        currentPrice: mockCurrentPrice,
     } = useArenaStore();
+
+    const {
+        isOnChainMode,
+        isOwner,
+        isTxPending,
+        triggerOnChainPrice,
+        triggerOnChainScenario,
+        resetOnChainArena,
+        startOnChainRound,
+        onChainPrice,
+        arenaState,
+    } = useWalletStore();
+
+    const currentPrice = isOnChainMode ? onChainPrice : mockCurrentPrice;
+    const isControlDisabled = isRunning || isTxPending || (isOnChainMode && !isOwner);
 
     const [manualPrice, setManualPrice] = useState(1500);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     const handleManualUpdate = () => {
-        triggerPriceUpdate(manualPrice);
+        if (isOnChainMode) {
+            triggerOnChainPrice(manualPrice);
+        } else {
+            triggerPriceUpdate(manualPrice);
+        }
+    };
+
+    const handleQuickUpdate = (pctOff: number) => {
+        const newPrice = currentPrice * pctOff;
+        if (isOnChainMode) {
+            triggerOnChainPrice(newPrice);
+        } else {
+            triggerPriceUpdate(newPrice);
+        }
+    };
+
+    const handleScenarioClick = async (scenarioId: string) => {
+        if (isOnChainMode) {
+            // For on-chain, we submit the entire scenario path in one transaction
+            const scenario = SCENARIOS.find(s => s.id === scenarioId);
+            if (scenario) {
+                await triggerOnChainScenario(scenario.prices);
+            }
+        } else {
+            runScenario(scenarioId);
+        }
+    };
+
+    const handleReset = () => {
+        if (isOnChainMode) {
+            resetOnChainArena();
+        } else {
+            resetArena();
+        }
     };
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,20 +79,41 @@ export default function SimulationPanel() {
     };
 
     return (
-        <div className="glass-card rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5 relative">
+            {isOnChainMode && !isOwner && (
+                <div className="absolute inset-0 z-10 bg-arena-bg/80 backdrop-blur-[1px] rounded-xl flex items-center justify-center p-6 text-center">
+                    <div className="glass-card p-4 border-yellow-500/30 w-full max-w-sm">
+                        <p className="text-yellow-500 text-sm mb-1">⚠️ Read-Only Mode</p>
+                        <p className="text-xs text-arena-text-muted">
+                            You are connected to the Somnia contracts, but you are not the contract owner.
+                            Only the owner can trigger price updates or run scenarios.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-arena-text-primary flex items-center gap-2">
-                    🎮 Simulation Control
+                    🎮 {isOnChainMode ? 'On-Chain Controls' : 'Simulation Control'}
                 </h2>
                 <div className="flex items-center gap-2">
+                    {isOnChainMode && isOwner && arenaState === 0 && (
+                        <button
+                            onClick={startOnChainRound}
+                            disabled={isTxPending}
+                            className="px-3 py-1 text-xs rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                        >
+                            ▶ Start Round
+                        </button>
+                    )}
                     <button
-                        onClick={resetArena}
-                        disabled={isRunning}
+                        onClick={handleReset}
+                        disabled={isControlDisabled}
                         className="px-3 py-1 text-xs rounded-lg bg-arena-border text-arena-text-secondary hover:bg-arena-border/80 transition-colors disabled:opacity-50"
                     >
                         🔄 Reset
                     </button>
-                    {isRunning && (
+                    {!isOnChainMode && isRunning && (
                         <button
                             onClick={stopScenario}
                             className="px-3 py-1 text-xs rounded-lg bg-arena-danger text-white hover:bg-red-600 transition-colors"
@@ -61,13 +131,13 @@ export default function SimulationPanel() {
                     return (
                         <motion.button
                             key={scenario.id}
-                            onClick={() => !isRunning && runScenario(scenario.id)}
-                            disabled={isRunning}
-                            whileHover={{ scale: isRunning ? 1 : 1.03 }}
-                            whileTap={{ scale: 0.97 }}
+                            onClick={() => handleScenarioClick(scenario.id)}
+                            disabled={isControlDisabled}
+                            whileHover={{ scale: isControlDisabled ? 1 : 1.03 }}
+                            whileTap={{ scale: isControlDisabled ? 1 : 0.97 }}
                             className={`scenario-btn rounded-xl p-3 text-left transition-all duration-300 ${isActive
-                                    ? 'ring-2 ring-arena-accent shadow-lg'
-                                    : 'bg-arena-card border border-arena-border hover:border-arena-accent/50'
+                                ? 'ring-2 ring-arena-accent shadow-lg'
+                                : 'bg-arena-card border border-arena-border hover:border-arena-accent/50'
                                 } disabled:opacity-40 disabled:cursor-not-allowed`}
                             style={isActive ? { borderColor: scenario.color, boxShadow: `0 0 20px ${scenario.color}30` } : {}}
                         >
@@ -77,8 +147,8 @@ export default function SimulationPanel() {
                             </div>
                             <p className="text-xs text-arena-text-muted leading-tight">{scenario.description}</p>
 
-                            {/* Progress bar for active scenario */}
-                            {isActive && (
+                            {/* Progress bar for mock active scenario */}
+                            {!isOnChainMode && isActive && (
                                 <div className="mt-2 h-1 rounded-full bg-arena-border overflow-hidden">
                                     <motion.div
                                         className="h-full rounded-full"
@@ -100,7 +170,7 @@ export default function SimulationPanel() {
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     className="text-xs text-arena-text-muted hover:text-arena-text-secondary transition-colors mb-3 flex items-center gap-1"
                 >
-                    {showAdvanced ? '▼' : '▶'} Manual Controls
+                    {showAdvanced ? '▼' : '▶'} Manual Controls {isOnChainMode && '(Owner)'}
                 </button>
 
                 {showAdvanced && (
