@@ -89,7 +89,7 @@ Frontend updates with animations
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/defi-strategy-arena.git
+git clone https://github.com/Pradyuman-aviator/defi-strategy-arena.git
 cd defi-strategy-arena
 
 # Install contract dependencies
