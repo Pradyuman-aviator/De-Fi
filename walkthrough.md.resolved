@@ -1,0 +1,216 @@
+# DeFi Strategy Arena — Complete Project Reference
+
+## Overview
+
+A real-time trading competition where **5 autonomous AI agents** watch the same price feed and independently decide to buy, sell, or hold — each using a different strategy. Deployed on **Somnia Testnet** with native Reactivity support.
+
+---
+
+## How It Works (Step by Step)
+
+### The Reactive Cascade
+
+```
+1. Price Update arrives (e.g. $1500 → $1300)
+         ↓
+2. PriceOracle stores price + emits PriceUpdated event
+         ↓
+3. PortfolioManager.updatePositions() called
+         ↓
+4. For each of 5 strategies:
+   ├── strategy.react(newPrice, updateId)
+   ├── Strategy reads price history from Oracle
+   ├── Strategy computes signal: LONG / SHORT / NEUTRAL
+   ├── If signal changed → close old position → open new one
+   └── P&L calculated and stored
+         ↓
+5. Leaderboard.updateRankings()
+   ├── Reads P&L from PortfolioManager for all agents
+   ├── Sorts by total P&L
+   └── Saves rank snapshot (circular buffer)
+         ↓
+6. Frontend updates: chart moves, agents light up, leaderboard reshuffles
+```
+
+### Two Trigger Modes
+
+| Mode | How It Works | When Used |
+|------|-------------|-----------|
+| **Manual** | `ArenaCore.triggerPriceUpdate(price)` calls the cascade sequentially | Demo, testing |
+| **Reactive (Somnia)** | `ReactiveStrategyHandler` subscribes to `PriceUpdated` events; Somnia validators auto-invoke it | Production on Somnia |
+
+---
+
+## The 5 AI Agents
+
+### 📈 Momentum Hunter
+
+| Property | Value |
+|----------|-------|
+| **Contract** | [MomentumStrategy.sol](file:///c:/Users/ultra/Desktop/dorahack/contracts/contracts/strategies/MomentumStrategy.sol) |
+| **Logic** | Calculate % change over last N prices. If >threshold → LONG. If <-threshold → SHORT |
+| **Parameters** | `lookbackWindow=10`, `threshold=2%` |
+| **Position Size** | Fixed $500 |
+
+**How it decides:**
+```
+momentum = (currentPrice - priceNUpdatesAgo) / priceNUpdatesAgo × 100
+
+if momentum > +2%  → LONG  ("price is going up, ride the wave")
+if momentum < -2%  → SHORT ("price is falling, sell")
+else               → NEUTRAL
+```
+
+**Best scenario:** Bull Run, Bear Market (strong sustained trends)
+**Worst scenario:** Sideways Chop (whipsaws back and forth)
+
+---
+
+### ⚖️ Mean Reverter
+
+| Property | Value |
+|----------|-------|
+| **Contract** | [MeanReversionStrategy.sol](file:///c:/Users/ultra/Desktop/dorahack/contracts/contracts/strategies/MeanReversionStrategy.sol) |
+| **Logic** | Bollinger Bands using Mean Absolute Deviation. Buy when oversold, sell when overbought |
+| **Parameters** | `lookback=20`, `deviationMultiplier=2x` |
+| **Position Size** | Dynamic (scales with distance from mean) |
+
+**How it decides:**
+```
+mean = average of last 20 prices
+MAD  = average |price - mean| over 20 prices
+band = MAD × 2
+
+if price < mean - band → LONG  ("oversold — buy the dip!")
+if price > mean + band → SHORT ("overbought — sell the top!")
+else                   → NEUTRAL
+```
+
+**Best scenario:** Flash Crash (buys when everyone panics, profits on recovery)
+**Worst scenario:** Moon Shot (keeps shorting a rising market)
+
+---
+
+### ⚡ Spread Sniper
+
+| Property | Value |
+|----------|-------|
+| **Contract** | [ArbitrageStrategy.sol](file:///c:/Users/ultra/Desktop/dorahack/contracts/contracts/strategies/ArbitrageStrategy.sol) |
+| **Logic** | Compares short-term vs long-term moving averages. Trades the crossover spread |
+| **Parameters** | `shortWindow=3`, `longWindow=15`, `threshold=1%` |
+| **Position Size** | $250 (smaller, more trades) |
+
+**How it decides:**
+```
+shortMA = average of last 3 prices
+longMA  = average of last 15 prices
+spread  = (shortMA - longMA) / longMA × 100
+
+if spread > +1% → LONG  ("short-term broke above long-term — bullish!")
+if spread < -1% → SHORT ("short-term broke below — bearish!")
+else            → NEUTRAL
+```
+
+**Best scenario:** Clear trend reversals with MA crossovers
+**Worst scenario:** Volatility Storm (too many false crossovers)
+
+---
+
+### 🛡️ Risk Guardian
+
+| Property | Value |
+|----------|-------|
+| **Contract** | [RiskParityStrategy.sol](file:///c:/Users/ultra/Desktop/dorahack/contracts/contracts/strategies/RiskParityStrategy.sol) |
+| **Logic** | Measures volatility → adjusts position size inversely. High vol = small bets, low vol = big bets. Uses trend for direction |
+| **Parameters** | `lookback=15`, `basePosition=500`, `minMultiplier=10%` |
+| **Position Size** | Dynamic: $150 (high vol) to $750 (low vol) |
+
+**How it decides:**
+```
+volatility = average |price - mean| / mean × 100 over last 10 prices
+trend      = (currentPrice - MA10) / MA10 × 100
+
+// Size based on volatility (inverse)
+if vol > 3%   → size × 0.3  (cautious)
+if vol > 1.5% → size × 0.7  (moderate)
+else          → size × 1.5  (aggressive)
+
+// Direction based on trend
+if trend > +0.5% → LONG
+if trend < -0.5% → SHORT
+else             → NEUTRAL
+```
+
+**Best scenario:** Survives everything — never blows up
+**Worst scenario:** Misses big moves due to tiny position sizes
+
+---
+
+### 🧠 Neural Trader
+
+| Property | Value |
+|----------|-------|
+| **Contract** | [RLStrategy.sol](file:///c:/Users/ultra/Desktop/dorahack/contracts/contracts/strategies/RLStrategy.sol) |
+| **Logic** | Reinforcement Learning with on-chain Q-table. 45 states × 3 actions. Epsilon-greedy exploration |
+| **Parameters** | `learningRate=10%`, `initialEpsilon=15%`, `discount=0.95` |
+| **Position Size** | Fixed $500 |
+
+**How it decides:**
+```
+// 1. Compute state from market conditions
+trend     = 3 levels (down, flat, up)       → 0,1,2
+volatility = 3 levels (low, med, high)       → 0,1,2
+pnlState  = 5 levels (big loss → big win)   → 0,1,2,3,4
+state = trend × 15 + volatility × 5 + pnlState  (0-44)
+
+// 2. Epsilon-greedy action selection
+if random() < epsilon → pick random action (explore)
+else                  → pick action with highest Q-value (exploit)
+
+// 3. After trade, update Q-table
+reward = P&L from the trade
+Q[state][action] += learningRate × (reward + discount × max(Q[newState]) - Q[state][action])
+
+// 4. Decay epsilon (explore less over time)
+epsilon = epsilon × 0.995 (min 5%)
+```
+
+**Best scenario:** Gets smarter over many rounds — finds patterns others miss
+**Worst scenario:** First few rounds are random — needs time to learn
+
+---
+
+## Smart Contract Architecture
+
+```mermaid
+graph TD
+    A[ArenaCore] -->|triggerPriceUpdate| B[PriceOracle]
+    A -->|updatePositions| C[PortfolioManager]
+    A -->|updateRankings| D[Leaderboard]
+    C -->|react| E[MomentumStrategy]
+    C -->|react| F[MeanReversionStrategy]
+    C -->|react| G[ArbitrageStrategy]
+    C -->|react| H[RiskParityStrategy]
+    C -->|react| I[RLStrategy]
+    B -->|PriceUpdated event| J[ReactiveStrategyHandler]
+    J -->|auto-trigger| C
+    J -->|auto-trigger| D
+    D -->|reads stats| C
+```
+
+## Deployed Contracts (Somnia Testnet)
+
+| Contract | Address |
+|----------|---------|
+| ArenaCore | `0x914eaFE3B3794F10358B74cD0D449233Ea7A84Fb` |
+| PriceOracle | `0x98730ce0dAB0a49275B4B9fAB6AD07d52Be956B9` |
+| PortfolioManager | `0x7e75B70Ec1Bb392E1f0b4d20beBB1f1DeACD0Cbd` |
+| Leaderboard | `0x8DBB0182119ADC6f36AF55C0D67616156267fBad` |
+| ReactiveStrategyHandler | `0xE326A438fcd19dB4206857B030700B7cA80ED95d` |
+| MomentumStrategy | `0x0577b77528a47F557f117700E213Ed0fcb19CF42` |
+| MeanReversionStrategy | `0x431bfaD480c007F12EB508A8176CdFa2236f3fa7` |
+| ArbitrageStrategy | `0x8c4c66f8d5b539A0d8b675291a37102eD0aD9bd1` |
+| RiskParityStrategy | `0x42cEce4993649021CE1a19e7415eabF7B716029C` |
+| RLStrategy | `0xd433E5DD1cE5126eC1bbb7596e01317C0c217a61` |
+
+**Explorer:** https://shannon-explorer.somnia.network

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { blockchain, type OnChainAgentStats, type OnChainRanking } from '@/lib/blockchain';
+import { blockchain, type OnChainAgentStats, type OnChainRanking, type PriceEvent } from '@/lib/blockchain';
 import { SOMNIA_EXPLORER, CONTRACTS } from '@/lib/contracts';
 
 interface WalletStore {
@@ -14,7 +14,8 @@ interface WalletStore {
 
     // On-chain data
     onChainPrice: number;
-    onChainPriceHistory: number[];
+    onChainPriceHistory: number[];       // simple price[] for backward-compat
+    onChainEventHistory: PriceEvent[];   // rich event data from queryFilter
     onChainAgents: OnChainAgentStats[];
     onChainRankings: OnChainRanking[];
     onChainUpdateCount: number;
@@ -42,6 +43,7 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
     lastTxHash: null,
     onChainPrice: 0,
     onChainPriceHistory: [],
+    onChainEventHistory: [],
     onChainAgents: [],
     onChainRankings: [],
     onChainUpdateCount: 0,
@@ -83,12 +85,19 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
 
     fetchOnChainState: async () => {
         try {
-            const [systemState, agents, rankings, priceHistory] = await Promise.all([
+            const [systemState, agents, rankings, eventHistory, contractPriceHistory] = await Promise.all([
                 blockchain.getSystemState(),
                 blockchain.getAllAgentStats(),
                 blockchain.getAllRankings(),
-                blockchain.getPriceHistory(30)
+                blockchain.getEventPriceHistory(200).catch(() => []),  // rich event log
+                blockchain.getPriceHistory(50).catch(() => []),        // contract view fallback
             ]);
+
+            // Use event history if available; otherwise fall back to contract view
+            const hasEventData = eventHistory.length > 0;
+            const simplePriceHistory = hasEventData
+                ? eventHistory.map(e => e.price)
+                : contractPriceHistory;
 
             set({
                 onChainPrice: Number(systemState.currentPrice) / 1e18,
@@ -96,7 +105,8 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
                 arenaState: systemState.arenaState,
                 onChainAgents: agents,
                 onChainRankings: rankings,
-                onChainPriceHistory: priceHistory,
+                onChainEventHistory: eventHistory,
+                onChainPriceHistory: simplePriceHistory,
                 error: null,
             });
         } catch (error: any) {

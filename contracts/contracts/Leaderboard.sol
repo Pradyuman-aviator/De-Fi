@@ -28,6 +28,7 @@ contract Leaderboard {
     address public owner;
     address public arena;
     address public portfolioManager;
+    address public reactiveHandler;
 
     // --- Ranking Data ---
     struct RankEntry {
@@ -80,6 +81,13 @@ contract Leaderboard {
      * @param _currentPrice The current price for unrealized P&L calculation
      */
     function updateRankings(uint256 _currentPrice) external {
+        require(
+            msg.sender == owner ||
+            msg.sender == arena ||
+            msg.sender == reactiveHandler,
+            "Not authorized"
+        );
+
         IPortfolioManagerLB pm = IPortfolioManagerLB(portfolioManager);
         uint256 count = pm.getStrategyCount();
 
@@ -105,15 +113,15 @@ contract Leaderboard {
             }));
         }
 
-        // Sort by total P&L (descending) — simple insertion sort (max 5-10 agents)
+        // Sort by total P&L (descending) - simple insertion sort (max 5-10 agents)
         for (uint256 i = 1; i < rankings.length; i++) {
             RankEntry memory key = rankings[i];
             int256 j = int256(i) - 1;
             while (j >= 0 && rankings[uint256(j)].totalPnL < key.totalPnL) {
-                rankings[uint256(j) + 1] = rankings[uint256(j)];
+                rankings[uint256(j + 1)] = rankings[uint256(j)];
                 j--;
             }
-            rankings[uint256(j) + 1] = key;
+            rankings[uint256(j + 1)] = key;
         }
 
         // Assign ranks
@@ -233,6 +241,11 @@ contract Leaderboard {
         portfolioManager = _pm;
     }
 
+    function setReactiveHandler(address _handler) external {
+        require(msg.sender == owner || msg.sender == arena, "Not authorized");
+        reactiveHandler = _handler;
+    }
+
     function resetLeaderboard() external {
         require(msg.sender == owner || msg.sender == arena, "Not authorized");
         delete rankings;
@@ -240,3 +253,4 @@ contract Leaderboard {
         updateCount = 0;
     }
 }
+

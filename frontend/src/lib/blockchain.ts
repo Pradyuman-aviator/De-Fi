@@ -27,6 +27,16 @@ export interface OnChainRanking {
     rank: bigint;
 }
 
+export interface PriceEvent {
+    updateId: number;
+    price: number;       // in USD (already divided by 1e18)
+    oldPrice: number;
+    priceChange: number; // signed, in USD
+    volatility: number;  // in basis points (e.g. 500 = 5%)
+    timestamp: number;   // unix seconds
+    blockNumber: number;
+}
+
 export interface SystemState {
     arenaState: number;
     roundNumber: bigint;
@@ -182,6 +192,65 @@ class BlockchainService {
         }));
     }
 
+    /**
+     * Fetches the full on-chain price history by scanning PriceUpdated events.
+     * Queries in 10,000-block chunks to stay within RPC limits.
+     * Falls back to the simple getPriceHistory() call on failure.
+     */
+    async getEventPriceHistory(maxEvents: number = 200): Promise<PriceEvent[]> {
+        try {
+            const latestBlock = await this.readProvider.getBlockNumber();
+            // Look back ~200k blocks; Somnia has very fast block times
+            const lookbackBlocks = 200_000;
+            const fromBlock = Math.max(0, latestBlock - lookbackBlocks);
+            const CHUNK = 10_000; // stay within typical RPC limits
+
+            const allEvents: any[] = [];
+            let start = fromBlock;
+
+            while (start <= latestBlock) {
+                const end = Math.min(start + CHUNK - 1, latestBlock);
+                try {
+                    const chunk = await this.priceOracle.queryFilter(
+                        this.priceOracle.filters.PriceUpdated(),
+                        start,
+                        end
+                    );
+                    allEvents.push(...chunk);
+                } catch {
+                    // If a chunk fails, skip it and continue
+                }
+                start = end + 1;
+            }
+
+            // Keep only the last maxEvents
+            const recent = allEvents.slice(-maxEvents);
+
+            return recent.map((e: any) => ({
+                updateId: Number(e.args.updateId),
+                price: Number(ethers.formatEther(e.args.newPrice)),
+                oldPrice: Number(ethers.formatEther(e.args.oldPrice)),
+                priceChange: Number(ethers.formatEther(e.args.priceChange)),
+                volatility: Number(e.args.volatility),
+                timestamp: Number(e.args.timestamp),
+                blockNumber: e.blockNumber,
+            }));
+        } catch (err) {
+            console.warn('getEventPriceHistory failed, falling back to getPriceHistory:', err);
+            // Fallback: return simple price array wrapped in PriceEvent shape
+            const prices = await this.getPriceHistory(maxEvents);
+            return prices.map((price, i) => ({
+                updateId: i + 1,
+                price,
+                oldPrice: i > 0 ? prices[i - 1] : price,
+                priceChange: i > 0 ? price - prices[i - 1] : 0,
+                volatility: 0,
+                timestamp: 0,
+                blockNumber: 0,
+            }));
+        }
+    }
+
     async getAllRankings(): Promise<OnChainRanking[]> {
         try {
             const rankings = await this.leaderboard.getAllRankings();
@@ -234,3 +303,4 @@ class BlockchainService {
 
 // Singleton instance
 export const blockchain = new BlockchainService();
+

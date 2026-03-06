@@ -183,7 +183,9 @@ contract ArenaCore {
             (bool success,) = strategyAddresses[i].call(
                 abi.encodeWithSignature("resetStrategy()")
             );
-            // Continue even if reset fails
+            if (!success) {
+                continue;
+            }
         }
 
         // Reset leaderboard
@@ -226,3 +228,5 @@ contract ArenaCore {
         return strategyAddresses;
     }
 }
+
+

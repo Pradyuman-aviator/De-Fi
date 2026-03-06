@@ -151,6 +151,11 @@ async function main() {
         );
         await reactiveHandler.waitForDeployment();
         reactiveHandlerAddr = await reactiveHandler.getAddress();
+
+        tx = await portfolio.setReactiveHandler(reactiveHandlerAddr);
+        await tx.wait();
+        tx = await leaderboard.setReactiveHandler(reactiveHandlerAddr);
+        await tx.wait();
         console.log("     ReactiveStrategyHandler:", reactiveHandlerAddr);
         console.log("     ↳ This handler listens for PriceUpdated events via Somnia Reactivity");
         console.log("     ↳ Create a subscription via @somnia-chain/reactivity SDK to activate");
@@ -227,3 +232,4 @@ main()
         console.error("DEPLOYMENT FAILED:", error);
         process.exit(1);
     });
+

@@ -210,13 +210,13 @@ export default function SimulationPanel() {
                         {/* Quick Buttons */}
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => triggerPriceUpdate(currentPrice * 0.95)}
+                                onClick={() => isOnChainMode ? triggerOnChainPrice(currentPrice * 0.95) : triggerPriceUpdate(currentPrice * 0.95)}
                                 className="flex-1 py-2 text-xs rounded-lg bg-arena-danger/20 text-arena-danger hover:bg-arena-danger/30 transition-colors font-medium"
                             >
                                 -5%
                             </button>
                             <button
-                                onClick={() => triggerPriceUpdate(currentPrice * 0.98)}
+                                onClick={() => isOnChainMode ? triggerOnChainPrice(currentPrice * 0.98) : triggerPriceUpdate(currentPrice * 0.98)}
                                 className="flex-1 py-2 text-xs rounded-lg bg-arena-danger/10 text-arena-danger/80 hover:bg-arena-danger/20 transition-colors font-medium"
                             >
                                 -2%
@@ -228,13 +228,13 @@ export default function SimulationPanel() {
                                 Set ${manualPrice}
                             </button>
                             <button
-                                onClick={() => triggerPriceUpdate(currentPrice * 1.02)}
+                                onClick={() => isOnChainMode ? triggerOnChainPrice(currentPrice * 1.02) : triggerPriceUpdate(currentPrice * 1.02)}
                                 className="flex-1 py-2 text-xs rounded-lg bg-arena-success/10 text-arena-success/80 hover:bg-arena-success/20 transition-colors font-medium"
                             >
                                 +2%
                             </button>
                             <button
-                                onClick={() => triggerPriceUpdate(currentPrice * 1.05)}
+                                onClick={() => isOnChainMode ? triggerOnChainPrice(currentPrice * 1.05) : triggerPriceUpdate(currentPrice * 1.05)}
                                 className="flex-1 py-2 text-xs rounded-lg bg-arena-success/20 text-arena-success hover:bg-arena-success/30 transition-colors font-medium"
                             >
                                 +5%

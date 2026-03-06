@@ -29,6 +29,7 @@ interface IStrategyStats {
 contract PortfolioManager {
     address public owner;
     address public arena;
+    address public reactiveHandler;
 
     // Strategy registry
     address[] public strategies;
@@ -72,6 +73,16 @@ contract PortfolioManager {
         _;
     }
 
+    modifier onlyUpdater() {
+        require(
+            msg.sender == owner ||
+            msg.sender == arena ||
+            msg.sender == reactiveHandler,
+            "Not authorized"
+        );
+        _;
+    }
+
     // --- Constructor ---
     constructor(uint256 _defaultCapital) {
         owner = msg.sender;
@@ -110,7 +121,7 @@ contract PortfolioManager {
      * @param _currentPrice The current price from oracle
      * @param _updateId The update sequence number
      */
-    function updatePositions(uint256 _currentPrice, uint256 _updateId) external {
+    function updatePositions(uint256 _currentPrice, uint256 _updateId) external onlyUpdater {
         // Trigger all strategies to react
         for (uint256 i = 0; i < strategies.length; i++) {
             try IStrategyStats(strategies[i]).react(_currentPrice, _updateId) {
@@ -223,8 +234,13 @@ contract PortfolioManager {
         arena = _arena;
     }
 
+    function setReactiveHandler(address _handler) external onlyAuthorized {
+        reactiveHandler = _handler;
+    }
+
     function resetPortfolio() external onlyAuthorized {
         totalPortfolioPnL = 0;
         totalPortfolioTrades = 0;
     }
 }
+

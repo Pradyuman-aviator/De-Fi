@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
 describe("PriceOracle", function () {
     let oracle;
@@ -55,8 +56,8 @@ describe("PriceOracle", function () {
                     newPrice, // newPrice
                     INITIAL_PRICE, // oldPrice
                     newPrice - INITIAL_PRICE, // priceChange
-                    await oracle.getVolatility(), // volatility (recalculated)
-                    (await ethers.provider.getBlock("latest")).timestamp + 1 // approximate
+                    anyValue, // volatility is computed from updated history
+                    anyValue // timestamp depends on mined block time
                 );
         });
 
@@ -154,3 +155,4 @@ describe("PriceOracle", function () {
         });
     });
 });
+

@@ -11,11 +11,12 @@ describe("Full Arena Integration", function () {
     let oracle, portfolio, leaderboard, arenaCore;
     let momentum, meanRev, arb, riskParity, rl;
     let owner;
+    let attacker;
     const INITIAL_PRICE = ethers.parseEther("1500");
     const DEFAULT_CAPITAL = ethers.parseEther("10000");
 
     beforeEach(async function () {
-        [owner] = await ethers.getSigners();
+        [owner, attacker] = await ethers.getSigners();
 
         // Deploy PriceOracle
         const PriceOracle = await ethers.getContractFactory("PriceOracle");
@@ -99,6 +100,17 @@ describe("Full Arena Integration", function () {
         expect(state[3]).to.equal(INITIAL_PRICE); // current price
     });
 
+    it("should reject unauthorized direct portfolio updates", async function () {
+        await expect(
+            portfolio.connect(attacker).updatePositions(ethers.parseEther("1550"), 1)
+        ).to.be.revertedWith("Not authorized");
+    });
+
+    it("should reject unauthorized direct leaderboard updates", async function () {
+        await expect(
+            leaderboard.connect(attacker).updateRankings(ethers.parseEther("1550"))
+        ).to.be.revertedWith("Not authorized");
+    });
     it("should trigger full cascade on single price update", async function () {
         await arenaCore.triggerPriceUpdate(ethers.parseEther("1550"));
 
@@ -233,3 +245,4 @@ describe("Full Arena Integration", function () {
         expect(summary._totalCapital).to.equal(DEFAULT_CAPITAL * BigInt(5));
     });
 });
+

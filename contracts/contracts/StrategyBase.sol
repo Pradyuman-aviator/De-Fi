@@ -71,7 +71,10 @@ abstract contract StrategyBase {
     // --- Modifiers ---
     modifier onlyAuthorized() {
         require(
-            msg.sender == owner || msg.sender == arena || msg.sender == address(this),
+            msg.sender == owner || 
+            msg.sender == arena || 
+            msg.sender == portfolioManager || 
+            msg.sender == address(this),
             "Not authorized"
         );
         _;

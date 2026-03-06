@@ -3,17 +3,17 @@
   "chainId": 50312,
   "deployer": "0xB6DB3774aAfBFf56833078717FEaFa941F212d65",
   "contracts": {
-    "PriceOracle": "0xE88643c9310291275B93BA56EF155A077b8895b4",
-    "PortfolioManager": "0x5Ec4af50Abd3b13Def7FeCf7d3FC39574D2497dd",
-    "Leaderboard": "0xa84009185873Bd54ee309fDF7BAE980A78f7d60e",
-    "ArenaCore": "0x03da74bE7a4FE1D14d618a9eb5AfBD9456787197",
-    "ReactiveStrategyHandler": "0x2f1d986368351640411394Eb254602CE940de054",
+    "PriceOracle": "0x98730ce0dAB0a49275B4B9fAB6AD07d52Be956B9",
+    "PortfolioManager": "0x7e75B70Ec1Bb392E1f0b4d20beBB1f1DeACD0Cbd",
+    "Leaderboard": "0x8DBB0182119ADC6f36AF55C0D67616156267fBad",
+    "ArenaCore": "0x914eaFE3B3794F10358B74cD0D449233Ea7A84Fb",
+    "ReactiveStrategyHandler": "0xE326A438fcd19dB4206857B030700B7cA80ED95d",
     "strategies": {
-      "MomentumStrategy": "0x892916A042af56710ccA23630c6B0c372d6fc21C",
-      "MeanReversionStrategy": "0xA7F2C9C00a6864e545044f9E3863bd66c05Ee7C1",
-      "ArbitrageStrategy": "0x5fd5e9BDCaf6b5A9dc1Edfe37EE246DC08F6ADc2",
-      "RiskParityStrategy": "0x1449B54A5c67831aF7D4Dcf03Ed26Bae00947Cc6",
-      "RLStrategy": "0xb9706Cd0164D700f6B2e5d44f2dC28CE98B886e8"
+      "MomentumStrategy": "0x0577b77528a47F557f117700E213Ed0fcb19CF42",
+      "MeanReversionStrategy": "0x431bfaD480c007F12EB508A8176CdFa2236f3fa7",
+      "ArbitrageStrategy": "0x8c4c66f8d5b539A0d8b675291a37102eD0aD9bd1",
+      "RiskParityStrategy": "0x42cEce4993649021CE1a19e7415eabF7B716029C",
+      "RLStrategy": "0xd433E5DD1cE5126eC1bbb7596e01317C0c217a61"
     }
   },
   "explorer": "https://shannon-explorer.somnia.network"
