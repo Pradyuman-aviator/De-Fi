@@ -11,6 +11,7 @@ export const CONTRACTS = {
     PortfolioManager: '0x7e75B70Ec1Bb392E1f0b4d20beBB1f1DeACD0Cbd',
     Leaderboard: '0x8DBB0182119ADC6f36AF55C0D67616156267fBad',
     ReactiveStrategyHandler: '0xE326A438fcd19dB4206857B030700B7cA80ED95d',
+    StrategyFactory: '0x0000000000000000000000000000000000000000', // Update after redeployment
     strategies: {
         MomentumStrategy: '0x0577b77528a47F557f117700E213Ed0fcb19CF42',
         MeanReversionStrategy: '0x431bfaD480c007F12EB508A8176CdFa2236f3fa7',
@@ -45,6 +46,10 @@ export const ABIS = {
         'function getAllAgentStats(uint256 _currentPrice) view returns (tuple(address strategyAddress, string name, uint8 strategyType, uint8 position, uint256 entryPrice, uint256 positionSize, int256 totalPnL, int256 unrealizedPnL, uint256 totalTrades, uint256 winRate, bool isActive)[])',
         'function getPortfolioSummary(uint256 _currentPrice) view returns (int256, uint256, uint256, uint256, int256, int256)',
         'function getStrategyCount() view returns (uint256)',
+        'function registerStrategy(address _strategy)',
+    ],
+    StrategyFactory: [
+        'function deployAgent(uint8 _strategyType, uint256 _threshold, uint8 _riskLevel, uint256 _positionSize, uint256 _lookbackWindow, string _label) returns (address)',
     ],
     Leaderboard: [
         'function getAllRankings() view returns (tuple(address strategy, string name, int256 totalPnL, uint256 winRate, uint256 totalTrades, uint256 rank)[])',

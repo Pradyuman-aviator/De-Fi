@@ -44,8 +44,9 @@ export default function AgentCard({ agent, onClick }: AgentCardProps) {
         <motion.div
             layout
             onClick={onClick}
-            className={`glass-card rounded-xl p-4 cursor-pointer transition-all duration-300 hover:border-opacity-100 ${agent.isThinking ? `animate-thinking ${agentGlowClasses[agent.type]}` : ''
-                }`}
+            className={`relative group rounded-2xl p-4 cursor-pointer transition-all duration-300 hover:border-opacity-100 overflow-hidden card-lift
+                ${agent.isThinking ? `animate-thinking ${agentGlowClasses[agent.type]}` : ''}
+                bg-gradient-to-br from-arena-card/90 to-arena-bg/90 backdrop-blur-xl`}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             animate={agent.isThinking ? { scale: [1, 1.03, 1] } : {}}
@@ -54,18 +55,38 @@ export default function AgentCard({ agent, onClick }: AgentCardProps) {
                 borderColor: agent.isThinking ? agent.color : undefined,
             }}
         >
+            {/* Gradient border effect */}
+            <div
+                className="absolute inset-0 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none"
+                style={{
+                    background: `linear-gradient(135deg, ${agent.color}30, transparent 60%)`,
+                }}
+            />
+
+            {/* Top accent line */}
+            <div
+                className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+                style={{
+                    background: `linear-gradient(90deg, transparent, ${agent.color}, transparent)`,
+                }}
+            />
+
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 relative">
                 <div className="flex items-center gap-2">
                     <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
-                        style={{ backgroundColor: agent.color + '20', border: `2px solid ${agent.color}` }}
+                        className="w-10 h-10 rounded-sm flex items-center justify-center text-sm font-bold uppercase tracking-wider"
+                        style={{
+                            backgroundColor: agent.color + '15',
+                            color: agent.color,
+                            border: `1px solid ${agent.color}40`,
+                        }}
                     >
-                        {agent.emoji}
+                        {agent.name.substring(0, 2)}
                     </div>
                     <div>
                         <h3 className="font-semibold text-sm text-arena-text-primary">{agent.name}</h3>
-                        <p className="text-xs text-arena-text-muted font-mono">{agent.type.replace('_', ' ')}</p>
+                        <p className="text-xs text-arena-text-muted font-mono uppercase tracking-wider">{agent.type.replace('_', ' ')}</p>
                     </div>
                 </div>
                 <span className={positionColors[agent.position]}>
@@ -74,10 +95,10 @@ export default function AgentCard({ agent, onClick }: AgentCardProps) {
             </div>
 
             {/* P&L */}
-            <div className="mb-3">
+            <div className="mb-3 relative">
                 <div className="flex items-baseline gap-2">
                     <span
-                        className={`text-2xl font-bold tabular-nums ${isPositive ? 'text-arena-success' : 'text-arena-danger'
+                        className={`text-2xl font-bold tabular-nums ${isPositive ? 'text-arena-success pnl-positive' : 'text-arena-danger pnl-negative'
                             }`}
                     >
                         {isPositive ? '+' : ''}${combinedPnL.toFixed(2)}
@@ -90,22 +111,34 @@ export default function AgentCard({ agent, onClick }: AgentCardProps) {
                 </div>
 
                 {/* Sparkline */}
-                <svg width={svgWidth} height={svgHeight} className="mt-1 opacity-60">
-                    <defs>
-                        <linearGradient id={`grad-${agent.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor={agent.color} stopOpacity="0.2" />
-                            <stop offset="100%" stopColor={agent.color} stopOpacity="0.8" />
-                        </linearGradient>
-                    </defs>
-                    <path d={sparklinePath} fill="none" stroke={agent.color} strokeWidth="1.5" />
-                </svg>
+                <div className="mt-2 relative">
+                    <svg width={svgWidth} height={svgHeight} className="opacity-70">
+                        <defs>
+                            <linearGradient id={`grad-${agent.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor={agent.color} stopOpacity="0.1" />
+                                <stop offset="100%" stopColor={agent.color} stopOpacity="0.6" />
+                            </linearGradient>
+                        </defs>
+                        <path
+                            d={sparklinePath}
+                            fill="none"
+                            stroke={agent.color}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                </div>
             </div>
 
             {/* Stats Row */}
-            <div className="flex items-center justify-between text-xs text-arena-text-secondary border-t border-arena-border pt-2">
-                <span>Win: {agent.winRate}%</span>
-                <span>Trades: {agent.totalTrades}</span>
-                {agent.entryPrice > 0 && <span>Entry: ${agent.entryPrice.toFixed(0)}</span>}
+            <div className="flex items-center justify-between text-xs text-arena-text-secondary border-t border-arena-border/50 pt-2">
+                <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-arena-success/60" />
+                    Win: {agent.winRate}%
+                </span>
+                <span className="font-mono text-arena-text-muted">{agent.totalTrades} trades</span>
+                {agent.entryPrice > 0 && <span className="font-mono">${agent.entryPrice.toFixed(0)}</span>}
             </div>
 
             {/* Thinking indicator */}

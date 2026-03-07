@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { useArenaStore } from '@/store/useArenaStore';
 import { useWalletStore } from '@/store/useWalletStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const agentColorMap: Record<string, string> = {
     momentum: '#3b82f6',
@@ -45,7 +46,7 @@ interface PriceChartProps {
 export default function PriceChart({ showAgents = true, height = 300 }: PriceChartProps) {
     const mockPriceHistory = useArenaStore((s) => s.priceHistory);
     const mockAgents = useArenaStore((s) => s.agents);
-    const { isOnChainMode, onChainPriceHistory, onChainEventHistory } = useWalletStore();
+    const { isOnChainMode, onChainPriceHistory, onChainEventHistory, isTxPending } = useWalletStore();
 
     // In on-chain mode, we only have current PnL, not full PnL history per agent.
     const showAgentLines = isOnChainMode ? false : showAgents;
@@ -151,92 +152,117 @@ export default function PriceChart({ showAgents = true, height = 300 }: PriceCha
                     </p>
                 </div>
             ) : (
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                        <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="rgba(30, 30, 46, 0.8)"
-                            vertical={false}
-                        />
-                        <XAxis
-                            dataKey={isOnChainMode ? 'label' : 'update'}
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#475569', fontSize: 11 }}
-                            interval="preserveStartEnd"
-                            minTickGap={40}
-                        />
-                        <YAxis
-                            yAxisId="price"
-                            orientation="right"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#475569', fontSize: 11 }}
-                            tickFormatter={(val) => `$${val}`}
-                            domain={['auto', 'auto']}
-                        />
-                        {showAgentLines && (
+                <div className="relative w-full" style={{ height }}>
+                    <AnimatePresence>
+                        {isOnChainMode && isTxPending && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 z-10 bg-arena-bg/60 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-lg border border-arena-border/50"
+                            >
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                    className="w-8 h-8 border-4 border-arena-accent/30 border-t-arena-accent rounded-full mb-3 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                                />
+                                <motion.p
+                                    animate={{ opacity: [0.5, 1, 0.5] }}
+                                    transition={{ repeat: Infinity, duration: 1.5 }}
+                                    className="text-xs font-mono font-bold text-arena-accent tracking-widest uppercase"
+                                >
+                                    Processing Block...
+                                </motion.p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                            <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="rgba(30, 30, 46, 0.8)"
+                                vertical={false}
+                            />
+                            <XAxis
+                                dataKey={isOnChainMode ? 'label' : 'update'}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#475569', fontSize: 11 }}
+                                interval="preserveStartEnd"
+                                minTickGap={40}
+                            />
                             <YAxis
-                                yAxisId="pnl"
-                                orientation="left"
+                                yAxisId="price"
+                                orientation="right"
                                 axisLine={false}
                                 tickLine={false}
                                 tick={{ fill: '#475569', fontSize: 11 }}
                                 tickFormatter={(val) => `$${val}`}
+                                domain={['auto', 'auto']}
                             />
-                        )}
-                        <Tooltip content={<CustomTooltip />} />
-                        {showAgentLines && (
-                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} iconSize={8} />
-                        )}
+                            {showAgentLines && (
+                                <YAxis
+                                    yAxisId="pnl"
+                                    orientation="left"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#475569', fontSize: 11 }}
+                                    tickFormatter={(val) => `$${val}`}
+                                />
+                            )}
+                            <Tooltip content={<CustomTooltip />} />
+                            {showAgentLines && (
+                                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} iconSize={8} />
+                            )}
 
-                        {isOnChainMode && avgVolBps > 0 && onChainChartData.length > 1 && (
-                            <ReferenceArea
-                                yAxisId="price"
-                                y1={bandLow}
-                                y2={bandHigh}
-                                fill="#6366f1"
-                                fillOpacity={0.06}
-                                label={{
-                                    value: `Vol +/- ${avgVolPct.toFixed(2)}%`,
-                                    fill: '#475569',
-                                    fontSize: 10,
-                                    position: 'insideTopLeft',
-                                }}
-                            />
-                        )}
+                            {isOnChainMode && avgVolBps > 0 && onChainChartData.length > 1 && (
+                                <ReferenceArea
+                                    yAxisId="price"
+                                    y1={bandLow}
+                                    y2={bandHigh}
+                                    fill="#6366f1"
+                                    fillOpacity={0.06}
+                                    label={{
+                                        value: `Vol +/- ${avgVolPct.toFixed(2)}%`,
+                                        fill: '#475569',
+                                        fontSize: 10,
+                                        position: 'insideTopLeft',
+                                    }}
+                                />
+                            )}
 
-                        <Line
-                            yAxisId="price"
-                            type="monotone"
-                            dataKey="price"
-                            stroke="#6366f1"
-                            strokeWidth={2}
-                            dot={false}
-                            name="price"
-                            isAnimationActive={false}
-                        />
-
-                        {showAgentLines && (
-                            <ReferenceLine yAxisId="pnl" y={0} stroke="#334155" strokeDasharray="3 3" />
-                        )}
-
-                        {showAgentLines && mockAgents.map((agent: any) => (
                             <Line
-                                key={agent.id}
-                                yAxisId="pnl"
+                                yAxisId="price"
                                 type="monotone"
-                                dataKey={agent.id}
-                                stroke={agentColorMap[agent.id]}
-                                strokeWidth={1.5}
+                                dataKey="price"
+                                stroke="#6366f1"
+                                strokeWidth={2}
                                 dot={false}
-                                name={agent.id}
-                                strokeOpacity={0.8}
+                                name="price"
                                 isAnimationActive={false}
                             />
-                        ))}
-                    </LineChart>
-                </ResponsiveContainer>
+
+                            {showAgentLines && (
+                                <ReferenceLine yAxisId="pnl" y={0} stroke="#334155" strokeDasharray="3 3" />
+                            )}
+
+                            {showAgentLines && mockAgents.map((agent: any) => (
+                                <Line
+                                    key={agent.id}
+                                    yAxisId="pnl"
+                                    type="monotone"
+                                    dataKey={agent.id}
+                                    stroke={agentColorMap[agent.id]}
+                                    strokeWidth={1.5}
+                                    dot={false}
+                                    name={agent.id}
+                                    strokeOpacity={0.8}
+                                    isAnimationActive={false}
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
             )}
         </div>
     );

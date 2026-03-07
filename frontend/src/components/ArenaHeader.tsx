@@ -41,16 +41,16 @@ export default function ArenaHeader() {
                 <div className="flex items-center justify-between">
                     {/* Left: Branding */}
                     <Link href="/arena" className="flex items-center gap-3 group">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-arena-accent to-purple-600 flex items-center justify-center text-lg font-bold shadow-lg shadow-arena-accent/20">
-                            ⚔️
+                        <div className="w-9 h-9 rounded-sm bg-arena-card border border-arena-border flex items-center justify-center text-sm font-bold text-arena-accent font-mono">
+                            ///
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-arena-text-primary tracking-tight group-hover:text-arena-accent transition-colors">
+                            <h1 className="text-lg font-bold text-arena-text-primary tracking-tight group-hover:text-arena-accent transition-colors uppercase">
                                 DeFi Strategy Arena
                             </h1>
-                            <p className="text-xs text-arena-text-muted -mt-0.5">
+                            <p className="text-xs text-arena-text-muted mt-0.5 font-mono">
                                 {isOnChainMode ? (
-                                    <span className="text-green-400">🟢 On-Chain Mode (Somnia)</span>
+                                    <span className="text-arena-accent">[ON-CHAIN] Somnia</span>
                                 ) : (
                                     'Powered by Somnia Reactive Contracts'
                                 )}
@@ -61,8 +61,8 @@ export default function ArenaHeader() {
                     {/* Center: Live Price */}
                     <div className="flex items-center gap-6">
                         <div className="text-center">
-                            <p className="text-xs text-arena-text-muted mb-0.5">
-                                {isOnChainMode ? '⛓️ On-Chain Price' : 'Live Price'}
+                            <p className="text-xs text-arena-text-muted mb-0.5 font-mono">
+                                {isOnChainMode ? 'ON-CHAIN PRICE' : 'LIVE PRICE'}
                             </p>
                             <div className="flex items-center gap-2">
                                 <motion.span
@@ -139,50 +139,50 @@ export default function ArenaHeader() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={toggleOnChainMode}
-                                    className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${isOnChainMode
-                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    className={`px-3 py-1.5 text-xs rounded-sm font-medium font-mono transition-all ${isOnChainMode
+                                        ? 'bg-arena-success/10 text-arena-success border border-arena-success/30'
                                         : 'bg-arena-border text-arena-text-muted hover:text-arena-text-primary'
                                         }`}
                                 >
-                                    {isOnChainMode ? '⛓️ On-Chain' : '💻 Mock'}
+                                    {isOnChainMode ? 'ON-CHAIN' : 'MOCK'}
                                 </button>
                                 <button
                                     onClick={disconnectWallet}
-                                    className="px-3 py-1.5 text-xs rounded-lg bg-arena-border text-arena-text-muted hover:text-arena-text-primary font-mono transition-colors"
+                                    className="px-3 py-1.5 text-xs rounded-sm bg-arena-border border border-arena-border/50 text-arena-text-muted hover:text-arena-text-primary font-mono transition-colors"
                                     title={walletAddress || ''}
                                 >
                                     {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-                                    {isOwner && <span className="text-yellow-400 ml-1">👑</span>}
+                                    {isOwner && <span className="text-arena-warning ml-2 font-bold">[OWNER]</span>}
                                 </button>
                             </div>
                         ) : (
                             <button
                                 onClick={connectWallet}
-                                className="px-3 py-1.5 text-xs rounded-lg bg-gradient-to-r from-arena-accent to-purple-600 text-white hover:shadow-lg hover:shadow-arena-accent/30 transition-all font-medium"
+                                className="px-4 py-1.5 text-xs rounded-sm bg-arena-accent/10 border border-arena-accent text-arena-accent hover:bg-arena-accent/20 transition-all font-mono font-bold"
                             >
-                                🔗 Connect
+                                CONNECT
                             </button>
                         )}
 
                         <Link
                             href="/how-it-works"
-                            className="px-3 py-1.5 text-xs rounded-lg border border-arena-border text-arena-text-secondary hover:text-arena-text-primary hover:border-arena-accent/50 transition-colors font-medium hidden md:inline-block"
+                            className="px-3 py-1.5 text-xs rounded-sm border border-arena-border text-arena-text-secondary hover:text-arena-text-primary hover:border-arena-accent/50 transition-colors font-mono hidden md:inline-block"
                         >
-                            📖 Docs
+                            DOCS
                         </Link>
                         <Link
                             href="/simulate"
-                            className="px-3 py-1.5 text-xs rounded-lg bg-arena-accent text-white hover:bg-arena-accent-bright transition-colors font-medium shadow-lg shadow-arena-accent/20"
+                            className="px-3 py-1.5 text-xs rounded-sm bg-arena-border border border-arena-border text-arena-text-primary hover:bg-arena-border/80 transition-colors font-mono"
                         >
-                            🎮 Simulate
+                            SIMULATE
                         </Link>
                     </div>
                 </div>
 
                 {/* Error bar */}
                 {error && (
-                    <div className="mt-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center justify-between">
-                        <span>⚠️ {error}</span>
+                    <div className="mt-2 px-3 py-1.5 rounded-sm bg-arena-danger/10 border border-arena-danger/30 text-arena-danger text-xs flex items-center justify-between font-mono">
+                        <span>ERROR: {error}</span>
                         <button onClick={() => useWalletStore.getState().clearError()} className="text-red-400 hover:text-red-300 ml-2">✕</button>
                     </div>
                 )}

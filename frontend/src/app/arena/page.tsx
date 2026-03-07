@@ -9,9 +9,11 @@ import { useArenaStore } from '@/store/useArenaStore';
 import { useWalletStore } from '@/store/useWalletStore';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AddAgentModal from '@/components/AddAgentModal';
 
 export default function ArenaPage() {
+    const router = useRouter();
     const mockAgents = useArenaStore(s => s.agents);
     const { isOnChainMode, onChainAgents } = useWalletStore();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -34,7 +36,10 @@ export default function ArenaPage() {
     }) : mockAgents;
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen relative">
+            {/* Animated mesh gradient background */}
+            <div className="arena-bg-mesh" />
+
             <ArenaHeader />
 
             <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -44,7 +49,7 @@ export default function ArenaPage() {
                         <span className="w-1.5 h-1.5 rounded-full bg-arena-accent animate-pulse" />
                         Active Agents
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {agents.map((agent, i) => (
                             <motion.div
                                 key={agent.id}
@@ -54,7 +59,7 @@ export default function ArenaPage() {
                             >
                                 <AgentCard
                                     agent={agent}
-                                    onClick={() => window.location.href = `/arena/agent/${agent.id}`}
+                                    onClick={() => router.push(`/arena/agent/${agent.id}`)}
                                 />
                             </motion.div>
                         ))}

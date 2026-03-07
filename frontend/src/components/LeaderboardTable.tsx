@@ -4,22 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useArenaStore, type LeaderboardEntry } from '@/store/useArenaStore';
 import { useWalletStore } from '@/store/useWalletStore';
 
-const medals = ['🥇', '🥈', '🥉'];
-
 const agentColors: Record<string, string> = {
     momentum: '#3b82f6',
     meanrev: '#a855f7',
     arb: '#eab308',
     riskparity: '#22c55e',
     rl: '#ef4444',
-};
-
-const agentEmojis: Record<string, string> = {
-    momentum: '📈',
-    meanrev: '⚖️',
-    arb: '⚡',
-    riskparity: '🛡️',
-    rl: '🧠',
 };
 
 export default function LeaderboardTable() {
@@ -40,11 +30,14 @@ export default function LeaderboardTable() {
     }).sort((a, b) => a.rank - b.rank) : mockLeaderboard;
 
     return (
-        <div className="glass-card rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-arena-border">
-                <h2 className="text-lg font-bold text-arena-text-primary flex items-center gap-2">
-                    🏆 Leaderboard
-                    <span className="text-xs text-arena-text-muted font-normal">Live Rankings</span>
+        <div className="glass-card rounded-2xl overflow-hidden relative">
+            {/* Top gradient accent */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-arena-accent/50 to-transparent" />
+
+            <div className="px-5 py-4 border-b border-arena-border/50">
+                <h2 className="text-lg font-bold text-arena-text-primary flex items-center gap-2 uppercase tracking-wide">
+                    LEADERBOARD
+                    <span className="text-xs px-2 py-0.5 rounded-sm bg-arena-accent/10 border border-arena-accent/30 text-arena-accent font-medium">LIVE</span>
                 </h2>
             </div>
 
@@ -52,12 +45,12 @@ export default function LeaderboardTable() {
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="text-xs text-arena-text-muted uppercase tracking-wider">
-                            <th className="px-4 py-2 text-left">Rank</th>
-                            <th className="px-4 py-2 text-left">Agent</th>
-                            <th className="px-4 py-2 text-right">Total P&L</th>
-                            <th className="px-4 py-2 text-right">Win Rate</th>
-                            <th className="px-4 py-2 text-right">Trades</th>
-                            <th className="px-4 py-2 text-right">Change</th>
+                            <th className="px-5 py-3 text-left font-medium">Rank</th>
+                            <th className="px-5 py-3 text-left font-medium">Agent</th>
+                            <th className="px-5 py-3 text-right font-medium">Total P&L</th>
+                            <th className="px-5 py-3 text-right font-medium">Win Rate</th>
+                            <th className="px-5 py-3 text-right font-medium">Trades</th>
+                            <th className="px-5 py-3 text-right font-medium">Change</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -75,68 +68,81 @@ export default function LeaderboardTable() {
                                         animate={{
                                             opacity: 1,
                                             x: 0,
-                                            backgroundColor: rankChange !== 0 ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
+                                            backgroundColor: rankChange !== 0 ? `${color}08` : 'transparent',
                                         }}
                                         exit={{ opacity: 0, x: 20 }}
                                         transition={{
                                             layout: { duration: 0.5, type: 'spring', stiffness: 300, damping: 30 },
                                             default: { duration: 0.3 },
                                         }}
-                                        className="border-b border-arena-border last:border-0 hover:bg-white/[0.02] transition-colors"
+                                        className="border-b border-arena-border/30 last:border-0 hover:bg-white/[0.03] transition-colors group"
                                     >
-                                        <td className="px-4 py-3">
-                                            <span className="text-lg">
-                                                {entry.rank <= 3 ? medals[entry.rank - 1] : (
-                                                    <span className="text-arena-text-muted font-mono text-sm">#{entry.rank}</span>
-                                                )}
+                                        <td className="px-5 py-4">
+                                            <span className="text-base font-mono text-arena-text-muted">
+                                                #{entry.rank}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-3">
                                                 <span
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
-                                                    style={{ backgroundColor: color + '20', border: `1.5px solid ${color}` }}
+                                                    className="w-8 h-8 rounded-sm flex items-center justify-center text-xs font-bold uppercase"
+                                                    style={{
+                                                        backgroundColor: color + '15',
+                                                        color: color,
+                                                        border: `1px solid ${color}40`,
+                                                    }}
                                                 >
-                                                    {agentEmojis[entry.agentId] || '🤖'}
+                                                    {entry.name.substring(0, 2)}
                                                 </span>
-                                                <span className="font-medium text-arena-text-primary">{entry.name}</span>
+                                                <span className="font-semibold text-arena-text-primary">{entry.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-5 py-4 text-right">
                                             <span
-                                                className={`font-bold tabular-nums ${isPositive ? 'text-arena-success' : 'text-arena-danger'
+                                                className={`font-semibold text-base tabular-nums ${isPositive ? 'text-arena-success' : 'text-arena-danger'
                                                     }`}
                                             >
                                                 {isPositive ? '+' : ''}${entry.totalPnL.toFixed(2)}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="text-arena-text-secondary tabular-nums">{entry.winRate}%</span>
+                                        <td className="px-5 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <div className="w-16 h-1.5 bg-arena-bg rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full transition-all duration-500"
+                                                        style={{
+                                                            width: `${entry.winRate}%`,
+                                                            backgroundColor: color
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="text-arena-text-secondary tabular-nums font-mono text-sm">{entry.winRate}%</span>
+                                            </div>
                                         </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="text-arena-text-muted tabular-nums">{entry.totalTrades}</span>
+                                        <td className="px-5 py-4 text-right">
+                                            <span className="text-arena-text-muted tabular-nums font-mono">{entry.totalTrades}</span>
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-5 py-4 text-right">
                                             {rankChange > 0 && (
                                                 <motion.span
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
-                                                    className="text-arena-success text-xs font-medium"
+                                                    className="inline-flex items-center gap-0.5 text-arena-success text-sm font-semibold bg-arena-success/10 px-2 py-1 rounded-lg"
                                                 >
-                                                    ▲{rankChange}
+                                                    <span>▲</span>{rankChange}
                                                 </motion.span>
                                             )}
                                             {rankChange < 0 && (
                                                 <motion.span
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
-                                                    className="text-arena-danger text-xs font-medium"
+                                                    className="inline-flex items-center gap-0.5 text-arena-danger text-sm font-semibold bg-arena-danger/10 px-2 py-1 rounded-lg"
                                                 >
-                                                    ▼{Math.abs(rankChange)}
+                                                    <span>▼</span>{Math.abs(rankChange)}
                                                 </motion.span>
                                             )}
                                             {rankChange === 0 && (
-                                                <span className="text-arena-text-muted text-xs">—</span>
+                                                <span className="text-arena-text-muted/50 text-sm">—</span>
                                             )}
                                         </td>
                                     </motion.tr>

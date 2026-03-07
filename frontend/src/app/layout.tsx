@@ -15,6 +15,7 @@ export default function RootLayout({
     return (
         <html lang="en" className="dark">
             <body className="min-h-screen bg-arena-bg text-arena-text-primary antialiased arena-grid-bg">
+                <div className="arena-bg-mesh" />
                 {children}
             </body>
         </html>

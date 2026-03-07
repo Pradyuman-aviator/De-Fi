@@ -261,8 +261,11 @@ class BlockchainService {
                 winRate: r.winRate,
                 totalTrades: r.totalTrades,
                 rank: r.rank,
+                isUserAgent: r.isUserAgent,
+                owner: r.owner,
             }));
-        } catch {
+        } catch (err) {
+            console.error("Leaderboard fetch error:", err);
             return [];
         }
     }

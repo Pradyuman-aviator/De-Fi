@@ -1,6 +1,17 @@
 import { create } from 'zustand';
-import { blockchain, type OnChainAgentStats, type OnChainRanking, type PriceEvent } from '@/lib/blockchain';
+import { blockchain, type OnChainAgentStats, type PriceEvent } from '@/lib/blockchain';
 import { SOMNIA_EXPLORER, CONTRACTS } from '@/lib/contracts';
+
+export interface OnChainRanking {
+    strategy: string;
+    name: string;
+    totalPnL: bigint;
+    winRate: bigint;
+    totalTrades: bigint;
+    rank: bigint;
+    isUserAgent?: boolean;
+    owner?: string;
+}
 
 interface WalletStore {
     // Wallet state
@@ -10,6 +21,7 @@ interface WalletStore {
     isOnChainMode: boolean;
     error: string | null;
     isTxPending: boolean;
+    pendingScenarioId: string | null;
     lastTxHash: string | null;
 
     // On-chain data
@@ -27,7 +39,7 @@ interface WalletStore {
     toggleOnChainMode: () => void;
     fetchOnChainState: () => Promise<void>;
     triggerOnChainPrice: (price: number) => Promise<void>;
-    triggerOnChainScenario: (prices: number[]) => Promise<void>;
+    triggerOnChainScenario: (prices: number[], scenarioId?: string) => Promise<void>;
     resetOnChainArena: () => Promise<void>;
     startOnChainRound: () => Promise<void>;
     clearError: () => void;
@@ -40,6 +52,7 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
     isOnChainMode: false,
     error: null,
     isTxPending: false,
+    pendingScenarioId: null,
     lastTxHash: null,
     onChainPrice: 0,
     onChainPriceHistory: [],
@@ -127,16 +140,16 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
         }
     },
 
-    triggerOnChainScenario: async (prices: number[]) => {
+    triggerOnChainScenario: async (prices: number[], scenarioId?: string) => {
         try {
-            set({ isTxPending: true, error: null });
+            set({ isTxPending: true, pendingScenarioId: scenarioId || null, error: null });
             const hash = await blockchain.triggerScenario(prices);
             set({ lastTxHash: hash });
             await get().fetchOnChainState();
         } catch (error: any) {
             set({ error: error.message || 'Scenario transaction failed' });
         } finally {
-            set({ isTxPending: false });
+            set({ isTxPending: false, pendingScenarioId: null });
         }
     },
 

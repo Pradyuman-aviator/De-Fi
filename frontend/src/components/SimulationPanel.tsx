@@ -29,6 +29,7 @@ export default function SimulationPanel() {
         startOnChainRound,
         onChainPrice,
         arenaState,
+        pendingScenarioId,
     } = useWalletStore();
 
     const currentPrice = isOnChainMode ? onChainPrice : mockCurrentPrice;
@@ -59,7 +60,7 @@ export default function SimulationPanel() {
             // For on-chain, we submit the entire scenario path in one transaction
             const scenario = SCENARIOS.find(s => s.id === scenarioId);
             if (scenario) {
-                await triggerOnChainScenario(scenario.prices);
+                await triggerOnChainScenario(scenario.prices, scenarioId);
             }
         } else {
             runScenario(scenarioId);
@@ -82,8 +83,8 @@ export default function SimulationPanel() {
         <div className="glass-card rounded-xl p-5 relative">
             {isOnChainMode && !isOwner && (
                 <div className="absolute inset-0 z-10 bg-arena-bg/80 backdrop-blur-[1px] rounded-xl flex items-center justify-center p-6 text-center">
-                    <div className="glass-card p-4 border-yellow-500/30 w-full max-w-sm">
-                        <p className="text-yellow-500 text-sm mb-1">⚠️ Read-Only Mode</p>
+                    <div className="glass-card p-4 border-arena-warning/30 w-full max-w-sm">
+                        <p className="text-arena-warning font-mono font-bold text-sm mb-1">[READ-ONLY MODE]</p>
                         <p className="text-xs text-arena-text-muted">
                             You are connected to the Somnia contracts, but you are not the contract owner.
                             Only the owner can trigger price updates or run scenarios.
@@ -93,8 +94,8 @@ export default function SimulationPanel() {
             )}
 
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-arena-text-primary flex items-center gap-2">
-                    🎮 {isOnChainMode ? 'On-Chain Controls' : 'Simulation Control'}
+                <h2 className="text-lg font-bold font-mono text-arena-text-primary flex items-center gap-2 tracking-wide">
+                    {isOnChainMode ? 'ON-CHAIN CONTROLS' : 'SIMULATION CONTROL'}
                 </h2>
                 <div className="flex items-center gap-2">
                     {isOnChainMode && isOwner && arenaState === 0 && (
@@ -103,7 +104,7 @@ export default function SimulationPanel() {
                             disabled={isTxPending}
                             className="px-3 py-1 text-xs rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-colors disabled:opacity-50"
                         >
-                            ▶ Start Round
+                            START ROUND
                         </button>
                     )}
                     <button
@@ -111,14 +112,14 @@ export default function SimulationPanel() {
                         disabled={isControlDisabled}
                         className="px-3 py-1 text-xs rounded-lg bg-arena-border text-arena-text-secondary hover:bg-arena-border/80 transition-colors disabled:opacity-50"
                     >
-                        🔄 Reset
+                        RESET
                     </button>
                     {!isOnChainMode && isRunning && (
                         <button
                             onClick={stopScenario}
                             className="px-3 py-1 text-xs rounded-lg bg-arena-danger text-white hover:bg-red-600 transition-colors"
                         >
-                            ⏹ Stop
+                            STOP
                         </button>
                     )}
                 </div>
@@ -142,8 +143,14 @@ export default function SimulationPanel() {
                             style={isActive ? { borderColor: scenario.color, boxShadow: `0 0 20px ${scenario.color}30` } : {}}
                         >
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xl">{scenario.emoji}</span>
-                                <span className="font-semibold text-sm text-arena-text-primary">{scenario.name}</span>
+                                <span className="font-bold font-mono text-sm text-arena-text-primary uppercase tracking-wider">{scenario.name}</span>
+                                {isOnChainMode && pendingScenarioId === scenario.id && (
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                        className="w-3 h-3 border-2 border-arena-text-primary border-t-transparent rounded-full ml-auto"
+                                    />
+                                )}
                             </div>
                             <p className="text-xs text-arena-text-muted leading-tight">{scenario.description}</p>
 
@@ -168,9 +175,9 @@ export default function SimulationPanel() {
             <div className="border-t border-arena-border pt-4">
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="text-xs text-arena-text-muted hover:text-arena-text-secondary transition-colors mb-3 flex items-center gap-1"
+                    className="text-xs text-arena-text-muted hover:text-arena-text-secondary transition-colors mb-3 flex items-center gap-2 font-mono"
                 >
-                    {showAdvanced ? '▼' : '▶'} Manual Controls {isOnChainMode && '(Owner)'}
+                    <span className="font-bold">[{showAdvanced ? '-' : '+'}]</span> MANUAL CONTROLS {isOnChainMode && '(OWNER)'}
                 </button>
 
                 {showAdvanced && (
@@ -223,9 +230,21 @@ export default function SimulationPanel() {
                             </button>
                             <button
                                 onClick={handleManualUpdate}
-                                className="flex-1 py-2 text-xs rounded-lg bg-arena-accent text-white hover:bg-arena-accent-bright transition-colors font-semibold"
+                                disabled={isTxPending}
+                                className="flex-1 py-2 text-xs rounded-lg bg-arena-accent text-white hover:bg-arena-accent-bright transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                Set ${manualPrice}
+                                {isTxPending && !pendingScenarioId ? (
+                                    <>
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                            className="w-3 h-3 border-2 border-white border-t-transparent rounded-full"
+                                        />
+                                        <span>SENDING...</span>
+                                    </>
+                                ) : (
+                                    `Set $${manualPrice}`
+                                )}
                             </button>
                             <button
                                 onClick={() => isOnChainMode ? triggerOnChainPrice(currentPrice * 1.02) : triggerPriceUpdate(currentPrice * 1.02)}
