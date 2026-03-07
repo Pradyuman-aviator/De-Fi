@@ -128,7 +128,7 @@ export default function HowItWorksPage() {
                 <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
                     <Link href="/arena" className="flex items-center gap-3 group">
                         <div className="w-9 h-9 rounded-sm bg-arena-card border border-arena-border flex items-center justify-center text-sm font-bold text-arena-accent font-mono">
-                            ///
+                            {'///'}
                         </div>
                         <div>
                             <h1 className="text-lg font-bold text-arena-text-primary tracking-tight group-hover:text-arena-accent transition-colors">
