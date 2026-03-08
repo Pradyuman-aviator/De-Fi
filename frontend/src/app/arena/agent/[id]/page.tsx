@@ -79,7 +79,7 @@ export default function AgentProfilePage() {
     // Determine derived UI constants
     const color = agentColors[agent.id] || '#6366f1';
     const combinedPnL = agent.totalPnL + agent.unrealizedPnL;
-
+   
     // In on-chain mode, detailed trade history isn't trivially exposed by the contracts without deep graph lookups.
     // For now we'll map the mock ones if available, or empty if fundamentally an on-chain custom bot.
     const trades = agent.trades || [];

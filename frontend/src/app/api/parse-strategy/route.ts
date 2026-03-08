@@ -8,10 +8,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing userInput" }, { status: 400 });
         }
 
-        const HF_TOKEN = process.env.HF_TOKEN;
-        if (!HF_TOKEN) {
-            console.warn("Missing HF_TOKEN environment variable. Using mock response for demo.");
-            // Fallback for hackathon demo if token isn't provided during review
+        const GROQ_API_KEY = process.env.GROQ_API_KEY;
+        if (!GROQ_API_KEY) {
+            console.warn("Using mock response due to missing GROQ_API_KEY");
             return NextResponse.json({
                 strategyType: "MOMENTUM",
                 riskLevel: "HIGH",
@@ -25,11 +24,16 @@ export async function POST(req: Request) {
         const systemPrompt = `You are a trading strategy parameter extractor for a DeFi arena.
 The user describes a trading strategy in plain English.
 Extract structured parameters from it.
+CRITICAL INSTRUCTION: If the user's input is a greeting (e.g., "hello", "hi"), a question unrelated to building a strategy, or complete nonsense, DO NOT hallucinate parameters. Instead, return ONLY this JSON:
+{
+  "error": "I am an AI Strategy Builder. Please describe a trading strategy you would like to deploy (e.g., 'Buy when the price drops 5%')."
+}
+If the input IS a valid strategy concept, map it to these parameters:
 Available strategy types: MOMENTUM, MEAN_REVERT, SPREAD, RISK_PARITY.
 Map aggressive/risky language to HIGH risk and large thresholds.
 Map cautious/safe language to LOW risk and small thresholds.
-Always return valid JSON matching the schema. Never explain, never add text.
-JSON structure to enforce exactly (do not output json tag):
+Always return valid JSON. Never explain.
+Valid Strategy JSON structure to enforce exactly:
 {
   "strategyType": "MOMENTUM" | "MEAN_REVERT" | "SPREAD" | "RISK_PARITY",
   "riskLevel": "LOW" | "MEDIUM" | "HIGH",
@@ -39,19 +43,16 @@ JSON structure to enforce exactly (do not output json tag):
   "label": "short human-readable name for the agent"
 }`;
 
-        // HuggingFace OpenAI-compatible completions endpoint
-        // NOTE: Qwen3-32B is not universally on HF Inference yet, using 2.5-72B-Instruct which is robust
-        const modelId = "Qwen/Qwen2.5-72B-Instruct";
-        const url = `https://api-inference.huggingface.co/models/${modelId}/v1/chat/completions`;
+        const url = `https://api.groq.com/openai/v1/chat/completions`;
 
         const response = await fetch(url, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${HF_TOKEN}`,
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: modelId,
+                model: "llama-3.1-8b-instant",
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userInput }
@@ -64,16 +65,19 @@ JSON structure to enforce exactly (do not output json tag):
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`HF API Error: ${response.status} ${errorText}`);
+            throw new Error(`Groq API Error: ${response.status} ${errorText}`);
         }
 
         const data = await response.json();
         let aiText = data.choices[0].message.content;
-
-        // Clean any possible markdown wrappers 
         aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
 
         const parsedJson = JSON.parse(aiText);
+
+        if (parsedJson.error) {
+            return NextResponse.json({ error: parsedJson.error }, { status: 400 });
+        }
+
         return NextResponse.json(parsedJson);
 
     } catch (error: any) {
