@@ -90,6 +90,21 @@ contract ArenaCore {
         );
     }
 
+    /**
+     * @notice Register a custom user agent from the StrategyFactory
+     */
+    function registerUserStrategy(address _strategy, address _owner, string memory _label) external {
+        strategyAddresses.push(_strategy);
+        
+        StrategyBase(_strategy).setPortfolioManager(portfolioManager);
+
+        // Arena is authorized to register strategies in PM
+        PortfolioManager(portfolioManager).registerStrategy(_strategy);
+        
+        // Tag it as a user agent in the leaderboard
+        Leaderboard(leaderboard).registerUserAgent(_strategy, _owner, _label);
+    }
+
     // --- Round Management ---
 
     function startRound() external onlyOwner {

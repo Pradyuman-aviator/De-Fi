@@ -38,6 +38,8 @@ contract Leaderboard {
         uint256 winRate;
         uint256 totalTrades;
         uint256 rank;
+        bool isUserAgent;
+        address owner;
     }
 
     RankEntry[] public rankings;
@@ -72,6 +74,21 @@ contract Leaderboard {
     constructor(address _portfolioManager) {
         owner = msg.sender;
         portfolioManager = _portfolioManager;
+    }
+
+    // --- User Agents ---
+    mapping(address => bool) public isUserAgentMapping;
+    mapping(address => address) public agentOwnerMapping;
+
+    function registerUserAgent(address _strategy, address _userOwner, string memory _label) external {
+        require(
+            msg.sender == owner ||
+            msg.sender == arena,
+            "Not authorized"
+        );
+        isUserAgentMapping[_strategy] = true;
+        agentOwnerMapping[_strategy] = _userOwner;
+        // _label can be caught by event or read if needed, but agent name handles it natively usually.
     }
 
     // --- Core Functions ---
@@ -109,7 +126,9 @@ contract Leaderboard {
                 totalPnL: sPnL + sUnrealized,
                 winRate: sWinRate,
                 totalTrades: sTrades,
-                rank: 0
+                rank: 0,
+                isUserAgent: isUserAgentMapping[stratAddr],
+                owner: agentOwnerMapping[stratAddr]
             }));
         }
 

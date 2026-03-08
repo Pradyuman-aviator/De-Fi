@@ -4,41 +4,29 @@ pragma solidity ^0.8.20;
 import "./StrategyBase.sol";
 import "./strategies/MomentumStrategy.sol";
 import "./strategies/MeanReversionStrategy.sol";
+import "./strategies/ArbitrageStrategy.sol";
+import "./strategies/RiskParityStrategy.sol";
 
-interface IPortfolioManagerFactory {
-    function registerStrategy(address _strategy) external;
-    function arena() external view returns (address);
+interface IArenaCoreFactory {
+    function registerUserStrategy(address _strategy, address _owner, string memory _label) external;
 }
 
 /**
  * @title StrategyFactory
- * @notice No-code deployment factory for user-created agents.
- *         Deploys strategy contracts and auto-registers them into PortfolioManager.
+ * @notice Factory for AI-generated and custom agents.
+ *         Accepts plain English parsed parameters to deploy and auto-register agents.
  */
 contract StrategyFactory {
     address public owner;
-    address public immutable portfolioManager;
+    address public immutable arenaCore;
     address public immutable priceOracle;
 
-    uint256 public defaultMomentumWindow = 10;
-    uint256 public defaultMeanReversionLookback = 20;
+    mapping(address => address) public ownerToStrategy;
 
-    event MomentumAgentDeployed(
-        address indexed creator,
-        address indexed strategy,
-        string name,
-        uint256 thresholdBps,
-        uint256 timestamp
-    );
+    enum StrategyTypeEnum { MOMENTUM, MEAN_REVERT, SPREAD, RISK_PARITY }
+    enum RiskLevel { LOW, MEDIUM, HIGH }
 
-    event MeanReversionAgentDeployed(
-        address indexed creator,
-        address indexed strategy,
-        string name,
-        uint256 deviationMultiple,
-        uint256 timestamp
-    );
-
+    event AgentDeployed(address indexed creator, address indexed strategy, string name, string strategyType, uint256 timestamp);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     modifier onlyOwner() {
@@ -46,81 +34,84 @@ contract StrategyFactory {
         _;
     }
 
-    constructor(address _portfolioManager, address _priceOracle) {
-        require(_portfolioManager != address(0), "Invalid portfolio manager");
+    constructor(address _arenaCore, address _priceOracle) {
+        require(_arenaCore != address(0), "Invalid arena core");
         require(_priceOracle != address(0), "Invalid price oracle");
 
         owner = msg.sender;
-        portfolioManager = _portfolioManager;
+        arenaCore = _arenaCore;
         priceOracle = _priceOracle;
     }
 
-    function deployMomentumAgent(
-        string memory _name,
-        uint256 _thresholdBps
+    /**
+     * @notice Universal deployment method called via Frontend/AI Parser
+     */
+    function deployAgent(
+        uint8 _strategyType,
+        uint256 _threshold,
+        uint8 _riskLevel,
+        uint256 _positionSize,
+        uint256 _lookbackWindow,
+        string memory _label
     ) external returns (address strategyAddress) {
-        require(bytes(_name).length > 0, "Name required");
+        require(ownerToStrategy[msg.sender] == address(0), "Only one agent per wallet allowed");
+        require(bytes(_label).length > 0, "Agent name required");
 
-        uint256 threshold = _thresholdBps > 0 ? _thresholdBps : 200;
+        uint256 posSizeEthers = _positionSize * 1 ether;
+        if (posSizeEthers == 0) posSizeEthers = 500 ether;
 
-        MomentumStrategy strategy = new MomentumStrategy(
-            priceOracle,
-            defaultMomentumWindow,
-            threshold
-        );
+        StrategyBase newStrategy;
 
-        _wireAndRegisterStrategy(strategy, _name, msg.sender);
+        // Map Risk Level to Stop Loss settings (in basis points)
+        // LOW = 2%, MEDIUM = 5%, HIGH = 8%
+        uint256 stopLoss;
+        if (_riskLevel == uint8(RiskLevel.LOW)) stopLoss = 200;
+        else if (_riskLevel == uint8(RiskLevel.MEDIUM)) stopLoss = 500;
+        else stopLoss = 800;
+        
+        // Ensure defaults if missing
+        uint256 lookback = _lookbackWindow > 1 ? _lookbackWindow : 10;
+        uint256 threshold = _threshold > 10 ? _threshold : 200;
 
-        emit MomentumAgentDeployed(msg.sender, address(strategy), _name, threshold, block.timestamp);
-        return address(strategy);
-    }
+        string memory typeLabel;
 
-    function deployMeanReversionAgent(
-        string memory _name,
-        uint256 _deviationMultiple
-    ) external returns (address strategyAddress) {
-        require(bytes(_name).length > 0, "Name required");
-
-        uint256 deviation = _deviationMultiple > 0 ? _deviationMultiple : 200;
-
-        MeanReversionStrategy strategy = new MeanReversionStrategy(
-            priceOracle,
-            defaultMeanReversionLookback,
-            deviation
-        );
-
-        _wireAndRegisterStrategy(strategy, _name, msg.sender);
-
-        emit MeanReversionAgentDeployed(msg.sender, address(strategy), _name, deviation, block.timestamp);
-        return address(strategy);
-    }
-
-    function _wireAndRegisterStrategy(
-        StrategyBase _strategy,
-        string memory _name,
-        address _creator
-    ) internal {
-        _strategy.setName(_name);
-
-        address arenaAddress = IPortfolioManagerFactory(portfolioManager).arena();
-        if (arenaAddress != address(0)) {
-            _strategy.setArena(arenaAddress);
+        // Map frontend requests to the 4 underlying logic contracts
+        if (_strategyType == uint8(StrategyTypeEnum.MOMENTUM)) {
+            newStrategy = new MomentumStrategy(priceOracle, lookback, threshold);
+            typeLabel = "MOMENTUM";
+            
+        } else if (_strategyType == uint8(StrategyTypeEnum.MEAN_REVERT)) {
+            newStrategy = new MeanReversionStrategy(priceOracle, lookback, threshold);
+            typeLabel = "MEAN_REVERT";
+            
+        } else if (_strategyType == uint8(StrategyTypeEnum.SPREAD)) {
+            newStrategy = new ArbitrageStrategy(priceOracle, lookback / 2, lookback, threshold);
+            typeLabel = "SPREAD";
+            
+        } else if (_strategyType == uint8(StrategyTypeEnum.RISK_PARITY)) {
+            newStrategy = new RiskParityStrategy(priceOracle, lookback, threshold, lookback / 2);
+            typeLabel = "RISK_PARITY";
+            
+        } else {
+            revert("Unknown Strategy Type");
         }
 
-        _strategy.setPortfolioManager(portfolioManager);
-        IPortfolioManagerFactory(portfolioManager).registerStrategy(address(_strategy));
-        _strategy.transferOwnership(_creator);
+        // Apply configuration and finalize wiring
+        newStrategy.updateConfig(posSizeEthers * 2, stopLoss, posSizeEthers);
+        newStrategy.setName(_label);
+        newStrategy.setArena(arenaCore);
+        newStrategy.transferOwnership(msg.sender);
+
+        // Core registration triggers PortfolioManager and Leaderboard tracking
+        IArenaCoreFactory(arenaCore).registerUserStrategy(address(newStrategy), msg.sender, _label);
+
+        ownerToStrategy[msg.sender] = address(newStrategy);
+
+        emit AgentDeployed(msg.sender, address(newStrategy), _label, typeLabel, block.timestamp);
+        return address(newStrategy);
     }
 
-    function setDefaultMomentumWindow(uint256 _window) external onlyOwner {
-        require(_window > 1, "Window too small");
-        defaultMomentumWindow = _window;
-    }
-
-    function setDefaultMeanReversionLookback(uint256 _lookback) external onlyOwner {
-        require(_lookback > 1, "Lookback too small");
-        defaultMeanReversionLookback = _lookback;
-    }
+    // --- Admin ---
 
     function transferOwnership(address _newOwner) external onlyOwner {
         require(_newOwner != address(0), "Invalid owner");

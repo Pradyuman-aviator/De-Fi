@@ -356,4 +356,13 @@ abstract contract StrategyBase {
         stopLossPercent = _stopLossPercent;
         defaultPositionSize = _defaultPositionSize;
     }
+
+    function setName(string memory _name) external onlyAuthorized {
+        name = _name;
+    }
+
+    function transferOwnership(address _newOwner) external onlyAuthorized {
+        require(_newOwner != address(0), "Invalid owner");
+        owner = _newOwner;
+    }
 }

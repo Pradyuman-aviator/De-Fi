@@ -1,0 +1,84 @@
+Compiled 11 Solidity files successfully (evm target: paris).
+Deploying to Somnia Testnet with account: 0xB6DB3774aAfBFf56833078717FEaFa941F212d65
+Balance: 43.561686584 STT
+
+========================================
+  DEPLOYING DEFI STRATEGY ARENA
+  Network: Somnia Testnet (Chain ID 50312)
+========================================
+
+1/9  Deploying PriceOracle...
+     PriceOracle: 0x3eAf1Cad58941b44822554B3edE24adb28778be4
+2/9  Deploying PortfolioManager...
+     PortfolioManager: 0x5C203Ef325b1D6fE96D31C2962e1C0761Db86FA4
+3/9  Deploying Leaderboard...
+     Leaderboard: 0xC793Dc5D1C2803e59AAeDae51683E8964Aaca2C0
+4/9  Deploying MomentumStrategy...
+     MomentumStrategy: 0x73257E5d9707e4ed7A359c275c32B71360539EDb
+5/9  Deploying MeanReversionStrategy...
+     MeanReversionStrategy: 0xC79c05155B91063857aE535b4bF2214c0BDcb0d5
+6/9  Deploying ArbitrageStrategy...
+     ArbitrageStrategy: 0x448dF156BbAD53B984889Fb391c9bfd69a1f9C8c
+7/9  Deploying RiskParityStrategy...
+     RiskParityStrategy: 0x3e5673447525D70cAE3a7e6170B0dC8304f7b486
+8/9  Deploying RLStrategy...
+     RLStrategy: 0x98BAa3CC7fd8345aE92Ad19B398c0d5785d4B2da
+9/10 Deploying ArenaCore...
+     ArenaCore: 0xa65944A009F5f412DC5565ddE0b734bfb6349F29
+10/10 Deploying StrategyFactory...
+     StrategyFactory: 0xAdEeEAD1ba82A4dEb46502AECD85370Ae9e66130
+
+--- Wiring Contracts ---
+
+Setting arena on PriceOracle...
+Setting arena on PortfolioManager...
+Setting arena on Leaderboard...
+Setting arena on all strategies...
+Initializing ArenaCore...
+
+--- Deploying ReactiveStrategyHandler (Somnia Reactivity) ---
+
+     ReactiveStrategyHandler: 0xE47eEfbF88e4fEA02bf05b33faaB680775E3f2db
+     ↳ This handler listens for PriceUpdated events via Somnia Reactivity
+     ↳ Create a subscription via @somnia-chain/reactivity SDK to activate
+
+--- Smoke Test ---
+
+✓ Round started
+✓ Price updated to $1520 — cascade triggered
+✓ Arena state: ACTIVE
+✓ Total updates: 1
+✓ Current price: 1520.0
+
+========================================
+  DEPLOYMENT COMPLETE
+========================================
+
+{
+  "network": "Somnia Testnet",
+  "chainId": 50312,
+  "deployer": "0xB6DB3774aAfBFf56833078717FEaFa941F212d65",
+  "contracts": {
+    "PriceOracle": "0x3eAf1Cad58941b44822554B3edE24adb28778be4",
+    "PortfolioManager": "0x5C203Ef325b1D6fE96D31C2962e1C0761Db86FA4",
+    "Leaderboard": "0xC793Dc5D1C2803e59AAeDae51683E8964Aaca2C0",
+    "ArenaCore": "0xa65944A009F5f412DC5565ddE0b734bfb6349F29",
+    "StrategyFactory": "0xAdEeEAD1ba82A4dEb46502AECD85370Ae9e66130",
+    "ReactiveStrategyHandler": "0xE47eEfbF88e4fEA02bf05b33faaB680775E3f2db",
+    "strategies": {
+      "MomentumStrategy": "0x73257E5d9707e4ed7A359c275c32B71360539EDb",
+      "MeanReversionStrategy": "0xC79c05155B91063857aE535b4bF2214c0BDcb0d5",
+      "ArbitrageStrategy": "0x448dF156BbAD53B984889Fb391c9bfd69a1f9C8c",
+      "RiskParityStrategy": "0x3e5673447525D70cAE3a7e6170B0dC8304f7b486",
+      "RLStrategy": "0x98BAa3CC7fd8345aE92Ad19B398c0d5785d4B2da"
+    }
+  },
+  "explorer": "https://shannon-explorer.somnia.network"
+}
+
+✅ Addresses saved to deployments/somnia-testnet.json
+
+🔍 Verify contracts at: https://shannon-explorer.somnia.network
+
+💰 Remaining balance: 41.121804362 STT
+   Gas used: 2.439882222 STT

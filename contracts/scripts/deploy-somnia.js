@@ -86,14 +86,21 @@ async function main() {
     await rl.waitForDeployment();
     console.log("     RLStrategy:", await rl.getAddress());
 
-    // --- Deploy Orchestrator ---
+    // --- Deploy Orchestrator & Factory ---
 
-    console.log("9/9  Deploying ArenaCore...");
+    console.log("9/10 Deploying ArenaCore...");
     const ArenaCore = await ethers.getContractFactory("ArenaCore");
     const arenaCore = await ArenaCore.deploy();
     await arenaCore.waitForDeployment();
     const arenaCoreAddr = await arenaCore.getAddress();
     console.log("     ArenaCore:", arenaCoreAddr);
+
+    console.log("10/10 Deploying StrategyFactory...");
+    const StrategyFactoryContract = await ethers.getContractFactory("StrategyFactory");
+    const strategyFactory = await StrategyFactoryContract.deploy(arenaCoreAddr, oracleAddr);
+    await strategyFactory.waitForDeployment();
+    const strategyFactoryAddr = await strategyFactory.getAddress();
+    console.log("     StrategyFactory:", strategyFactoryAddr);
 
     // --- Wire Everything Together ---
 
@@ -192,6 +199,7 @@ async function main() {
             PortfolioManager: portfolioAddr,
             Leaderboard: leaderboardAddr,
             ArenaCore: arenaCoreAddr,
+            StrategyFactory: strategyFactoryAddr,
             ReactiveStrategyHandler: reactiveHandlerAddr,
             strategies: {
                 MomentumStrategy: await momentum.getAddress(),
